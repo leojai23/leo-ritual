@@ -1,7 +1,7 @@
 # Leo-Ritual
 
-A private daily habit tracker, pre-loaded with 16 habits across four areas of life:
-**Physical**, **Mental**, **Official**, and **Personal**.
+A private daily habit tracker, pre-loaded with 20 habits across five areas of life:
+**Physical**, **Mental**, **Official**, **Personal**, and **Financial**.
 
 ## The app
 
@@ -15,6 +15,7 @@ Pre-loaded habits (4 per category):
 - **Mental** — Breathing Exercise, Twin Heart Meditation, Gratitude Journaling, Daily Reading
 - **Official** — Top-3 Daily Priorities, Deep Work Block, End-of-Day Shutdown, Learn One New Thing
 - **Personal** — Consistent Sleep/Wake Time, Screen-Off Wind-Down, Connect with a Loved One, Declutter One Small Space
+- **Financial** — Review Portfolio, Finance Tracking, Savings, Read About Investments
 
 Features:
 

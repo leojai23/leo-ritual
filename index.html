@@ -201,7 +201,8 @@ var DEFAULT_CATEGORIES = [
   {id:"physical", label:"Physical", icon:"💪", order:0},
   {id:"mental", label:"Mental", icon:"🧘", order:1},
   {id:"official", label:"Official", icon:"💼", order:2},
-  {id:"personal", label:"Personal", icon:"🏡", order:3}
+  {id:"personal", label:"Personal", icon:"🏡", order:3},
+  {id:"financial", label:"Financial", icon:"💰", order:4}
 ];
 function cats(){ return DB.categories.slice().sort(function(a,b){return a.order-b.order;}); }
 
@@ -350,7 +351,32 @@ var GUIDES = {
 "5 minutes, one small area — a drawer, your desk, one shelf.\n\n"+
 "• Pick a different spot each day so it doesn't become a big weekend project.\n"+
 "• \"One in, one out\" for anything you're tempted to keep \"just in case\".\n"+
-"• Don't aim for perfect — aim for a little better than yesterday."
+"• Don't aim for perfect — aim for a little better than yesterday.",
+
+  reviewPortfolio:
+"Check in on at least one stock or investment holding today — a quick portfolio glance, not a trading session.\n\n"+
+"• Look at 1 holding in some depth: price movement, any news, how it fits your original thesis.\n"+
+"• This is about staying informed, not reacting — avoid impulse buy/sell decisions from a single day's move.\n"+
+"• Rotate which holding you review so everything gets attention over a few weeks.\n"+
+"• If you use a brokerage app, a 2-minute look at holdings + today's P&L is enough.",
+
+  financeTracking:
+"Track today's money movement — income, expenses, transfers — so you always know where you stand.\n\n"+
+"• Log it as it happens, not from memory at night.\n"+
+"• A simple app (like Leo-Finance), spreadsheet, or notes app all work — pick whichever you'll actually keep using.\n"+
+"• The goal is visibility, not restriction — see where money goes before deciding to change anything.",
+
+  savings:
+"Move something toward savings or investments before the day's spending happens — pay yourself first.\n\n"+
+"• Even a small, consistent amount beats an occasional large one.\n"+
+"• Automate where you can (SIP, recurring transfer) so it doesn't depend on willpower each day.\n"+
+"• Nothing to spare today? That's fine — the check-in itself keeps the habit alive.",
+
+  readInvestment:
+"Spend 10–15 minutes reading or learning something about investing — an article, a book chapter, market commentary.\n\n"+
+"• Mix sources: fundamentals (how to read a balance sheet), macro news, and your own holdings' sector.\n"+
+"• Note one takeaway in a line — it compounds into real knowledge over months.\n"+
+"• Reading isn't a signal to trade — treat it as building judgment, not finding today's tip."
 };
 
 function seed(){
@@ -377,7 +403,12 @@ function seed(){
       h("Consistent Sleep/Wake Time","😴",GUIDES.sleep,"personal",0),
       h("Screen-Off Wind-Down","📵",GUIDES.winddown,"personal",1),
       h("Connect with a Loved One","☎️",GUIDES.connect,"personal",2),
-      h("Declutter One Small Space","🧹",GUIDES.declutter,"personal",3)
+      h("Declutter One Small Space","🧹",GUIDES.declutter,"personal",3),
+
+      h("Review Portfolio","📈",GUIDES.reviewPortfolio,"financial",0),
+      h("Finance Tracking","🧾",GUIDES.financeTracking,"financial",1),
+      h("Savings","🏦",GUIDES.savings,"financial",2),
+      h("Read About Investments","📚",GUIDES.readInvestment,"financial",3)
     ],
     categories: DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; }),
     logs:{},
@@ -398,6 +429,18 @@ function load(){
     if(!d.logs) d.logs={};
     if(!d.categories || !d.categories.length) d.categories = DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; });
     (d.habits||[]).forEach(function(h){ if(!h.category) h.category="personal"; });
+    if(!d.categories.some(function(c){ return c.id==="financial"; })){
+      var maxCatOrder=d.categories.reduce(function(m,c){return Math.max(m,c.order);},-1);
+      d.categories.push({id:"financial", label:"Financial", icon:"💰", order:maxCatOrder+1});
+      var maxOrder=(d.habits||[]).reduce(function(m,h){return Math.max(m,h.order);},-1);
+      var nd=todayStr();
+      d.habits.push(
+        {id:uid(), name:"Review Portfolio", icon:"📈", guide:GUIDES.reviewPortfolio, category:"financial", archived:false, order:maxOrder+1, createdAt:nd},
+        {id:uid(), name:"Finance Tracking", icon:"🧾", guide:GUIDES.financeTracking, category:"financial", archived:false, order:maxOrder+2, createdAt:nd},
+        {id:uid(), name:"Savings", icon:"🏦", guide:GUIDES.savings, category:"financial", archived:false, order:maxOrder+3, createdAt:nd},
+        {id:uid(), name:"Read About Investments", icon:"📚", guide:GUIDES.readInvestment, category:"financial", archived:false, order:maxOrder+4, createdAt:nd}
+      );
+    }
     return d;
   }catch(e){ return seed(); }
 }
