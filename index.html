@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b4607a">
+<meta name="description" content="Leo-Ritual — daily habit tracker with streaks and best-practice guides for Exercise, Breathing Exercise, Twin Heart Meditation, and Oil Pulling.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Leo-Ritual</title>
+<style>
+:root{
+  --bg:#f7f4f1; --bg-2:#fffdfb; --panel:#ffffff; --ink:#2b2724; --ink-soft:#6b625c;
+  --line:#e8e0d8; --accent:#b4607a; --accent-ink:#fff;
+  --chip:#f3e8ec; --chip-ink:#8a3f58; --good:#3f9142; --good-bg:#e7f3e7;
+  --warn:#c94f4f; --warn-bg:#fbeaea; --mid:#c98a2f; --mid-bg:#f7edd9;
+  --shadow:0 1px 3px rgba(40,30,30,.08),0 8px 24px rgba(40,30,30,.06);
+  --maxw:48rem;
+}
+[data-theme="dark"]{
+  --bg:#1b1718; --bg-2:#221d1e; --panel:#282224; --ink:#ece6e3; --ink-soft:#ab9f9a;
+  --line:#3a3335; --accent:#d98aa0; --accent-ink:#1b1718;
+  --chip:#332228; --chip-ink:#e3a9ba; --good:#6fbf73; --good-bg:#1c2b1e;
+  --warn:#e08080; --warn-bg:#332020; --mid:#e0ac5c; --mid-bg:#332a1a;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+a{color:var(--accent); text-decoration:none}
+button{font:inherit}
+input,textarea,select{font:inherit; color:inherit}
+
+.app{display:flex; min-height:100vh}
+.sidebar{
+  width:14.5rem; flex:0 0 14.5rem; background:var(--bg-2); border-right:1px solid var(--line);
+  position:sticky; top:0; height:100vh; overflow-y:auto; padding:1rem .6rem 4rem;
+}
+.side-head{display:flex; align-items:center; gap:.6rem; padding:.4rem .6rem 1.1rem}
+.side-head .logo{
+  width:2.1rem;height:2.1rem;border-radius:50%;flex:0 0 2.1rem;
+  background:radial-gradient(circle at center, var(--bg-2) 0 18%, var(--accent) 20% 34%, var(--bg-2) 36% 52%, var(--accent) 54% 100%);
+  border:1px solid var(--line);
+}
+.side-head b{font-size:1.05rem}
+.side-head small{display:block; color:var(--ink-soft); font-size:.74rem; font-weight:500}
+
+nav.tabs{display:flex; flex-direction:column; gap:.15rem; font-size:.92rem}
+nav.tabs button{
+  display:flex; align-items:center; gap:.6rem; width:100%; text-align:left; background:none; border:0;
+  color:var(--ink); padding:.55rem .65rem; border-radius:.55rem; cursor:pointer; font-weight:600;
+}
+nav.tabs button:hover{background:var(--chip)}
+nav.tabs button.on{background:var(--accent); color:var(--accent-ink)}
+nav.tabs button .ico{width:1.1rem; text-align:center; opacity:.85}
+
+.main{flex:1; min-width:0; display:flex; flex-direction:column}
+.topbar{
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:.6rem;
+  padding:.6rem 1rem; background:color-mix(in srgb, var(--bg-2) 90%, transparent);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+}
+.topbar .spacer{flex:1}
+.icon-btn{
+  border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;
+  width:2.2rem; height:2.2rem; border-radius:.6rem; display:grid; place-items:center; font-size:1rem;
+}
+.icon-btn:hover{border-color:var(--accent); color:var(--accent)}
+.crumb{font-size:.86rem; color:var(--ink-soft); display:flex; align-items:center; gap:.4rem}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:1.6rem 1.2rem 6rem; width:100%}
+.wrap h1{font-size:1.5rem; margin:.1rem 0 .3rem; letter-spacing:-.01em}
+.wrap h2{font-size:1.02rem; margin:1.6rem 0 .6rem}
+.sub{color:var(--ink-soft); font-size:.88rem; margin-bottom:1rem}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:.85rem; padding:1.1rem 1.2rem; box-shadow:var(--shadow); margin-bottom:1rem}
+.card h3{margin:0 0 .5rem; font-size:.98rem}
+.card-muted{color:var(--ink-soft); font-size:.85rem}
+
+.datebar{display:flex; align-items:center; gap:.5rem; margin-bottom:1rem}
+.datebar b{flex:1; text-align:center; font-size:1rem}
+
+.habitrow{display:flex; align-items:center; gap:.8rem; padding:.85rem .9rem; border:1px solid var(--line); border-radius:.8rem; background:var(--panel); box-shadow:var(--shadow); margin-bottom:.6rem}
+.habitrow .chk{width:1.9rem; height:1.9rem; border-radius:50%; border:2px solid var(--line); background:var(--bg-2); cursor:pointer; display:grid; place-items:center; flex:0 0 auto; font-size:1.05rem; color:transparent}
+.habitrow .chk.done{background:var(--good); border-color:var(--good); color:#fff}
+.habitrow .ico{font-size:1.3rem; flex:0 0 auto}
+.habitrow .body{flex:1; min-width:0; cursor:pointer}
+.habitrow .name{font-weight:700}
+.habitrow.done .name{color:var(--ink-soft)}
+.habitrow .streak{font-size:.78rem; color:var(--ink-soft)}
+.habitrow .streak b{color:var(--accent)}
+
+.pbar{height:8px; border-radius:99px; background:var(--line); overflow:hidden; margin-top:.5rem}
+.pbar span{display:block; height:100%; background:var(--good)}
+.pbar.mid span{background:var(--mid)}
+.pct{font-size:.76rem; color:var(--ink-soft); margin-top:.25rem}
+
+.list{display:flex; flex-direction:column; gap:.6rem}
+.item-card{background:var(--panel); border:1px solid var(--line); border-radius:.75rem; padding:.9rem 1rem; box-shadow:var(--shadow); cursor:pointer; display:flex; align-items:center; gap:.7rem}
+.item-card:hover{border-color:var(--accent)}
+.item-card .ico{font-size:1.3rem}
+.item-card .title{font-weight:700; flex:1}
+.item-card .meta{color:var(--ink-soft); font-size:.8rem; margin-top:.1rem}
+.item-card.archived{opacity:.55}
+
+.addrow{display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap}
+.addrow input{flex:1; min-width:6rem; padding:.55rem .7rem; border:1px solid var(--line); border-radius:.55rem; background:var(--bg-2); color:var(--ink)}
+.addrow button, .btn{padding:.55rem .9rem; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:.55rem; cursor:pointer; font-weight:600; white-space:nowrap}
+.btn.ghost{background:none; color:var(--ink); border-color:var(--line)}
+.btn.danger{background:var(--warn); border-color:var(--warn); color:#fff}
+.btn.sm{padding:.35rem .6rem; font-size:.82rem}
+
+textarea.notes{width:100%; min-height:9rem; padding:.7rem .8rem; border:1px solid var(--line); border-radius:.6rem; background:var(--bg-2); color:var(--ink); resize:vertical; white-space:pre-wrap; font-size:.92rem; line-height:1.55}
+.guide-view{white-space:pre-wrap; font-size:.92rem; line-height:1.6}
+.field{margin:.7rem 0}
+.field label{display:block; font-size:.8rem; font-weight:700; color:var(--ink-soft); margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.03em}
+.field input[type=text], .field input[type=time]{
+  width:100%; padding:.55rem .7rem; border:1px solid var(--line); border-radius:.55rem; background:var(--bg-2); color:var(--ink);
+}
+.icopick{width:3.2rem !important; text-align:center; font-size:1.3rem; flex:0 0 3.2rem !important}
+
+.stats{display:flex; gap:.8rem; flex-wrap:wrap; margin:.3rem 0 1rem}
+.stat{background:var(--chip); color:var(--chip-ink); border-radius:.7rem; padding:.6rem .9rem; text-align:center; flex:1; min-width:6rem}
+.stat b{display:block; font-size:1.3rem}
+.stat span{font-size:.72rem; text-transform:uppercase; letter-spacing:.03em}
+
+.calgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:.35rem; margin-top:.6rem}
+.calgrid .dow{text-align:center; font-size:.72rem; color:var(--ink-soft); font-weight:700; text-transform:uppercase}
+.calcell{aspect-ratio:1; border:1px solid var(--line); border-radius:.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--panel); font-size:.82rem; gap:.25rem}
+.calcell:hover{border-color:var(--accent)}
+.calcell.empty{visibility:hidden; cursor:default}
+.calcell.today{border-color:var(--accent); border-width:2px}
+.calcell .dot{width:.4rem; height:.4rem; border-radius:50%}
+.dot.good{background:var(--good)} .dot.mid{background:var(--mid)} .dot.none{background:var(--line)}
+
+.banner{
+  display:flex; align-items:center; gap:.6rem; background:var(--mid-bg); color:var(--mid);
+  border:1px solid var(--mid); border-radius:.7rem; padding:.65rem .9rem; margin-bottom:1rem; font-size:.88rem;
+}
+
+.empty-state{text-align:center; padding:2.5rem 1rem; color:var(--ink-soft)}
+
+@media(max-width:760px){
+  .sidebar{position:fixed; left:0; top:0; bottom:0; z-index:40; transform:translateX(-100%); transition:transform .2s; box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .menu-btn{display:grid !important}
+}
+.menu-btn{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <div class="logo"></div>
+      <div><b>Leo-Ritual</b><small>Daily habit tracker</small></div>
+    </div>
+    <nav class="tabs" id="navtabs"></nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" title="Menu">≡</button>
+      <div class="crumb" id="crumb"></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">◐</button>
+    </div>
+    <div class="wrap" id="view"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- storage ---------- */
+var KEY = "leoRitualDB_v1";
+function uid(){ return "id" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function pad(n){ return n<10 ? "0"+n : ""+n; }
+function dstr(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function todayStr(){ return dstr(new Date()); }
+function addDays(dateStr, n){
+  var p=dateStr.split("-"); var d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return dstr(d);
+}
+function fmtDate(s){
+  var p=s.split("-"); var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+}
+
+var GUIDES = {
+  exercise:
+"Move your body for at least 20–30 minutes, most days of the week.\n\n"+
+"• Mix it up: some cardio (walk, jog, cycle, swim) + some strength (bodyweight, weights, bands) across the week.\n"+
+"• Warm up 3–5 min before, cool down / stretch 3–5 min after.\n"+
+"• Consistency beats intensity — a brisk 20-minute walk daily beats an occasional hard workout.\n"+
+"• Progress gradually: add a little more time, weight, or reps every 1–2 weeks.\n"+
+"• Sharp pain means stop; mild muscle fatigue the next day is normal.\n"+
+"• Stay hydrated and get enough protein + sleep to recover.",
+
+  breathing:
+"A simple daily breathing practice, 5–10 minutes, ideally on an empty stomach.\n\n"+
+"Basic technique — Deep Diaphragmatic Breathing:\n"+
+"1. Sit comfortably, spine straight, shoulders relaxed.\n"+
+"2. Inhale slowly through the nose for a count of 4, letting the belly expand (not the chest).\n"+
+"3. Hold gently for a count of 4.\n"+
+"4. Exhale slowly through the nose or mouth for a count of 6–8.\n"+
+"5. Repeat for 10–15 rounds.\n\n"+
+"Optional — Nadi Shodhana (Alternate Nostril Breathing):\n"+
+"1. Close the right nostril with the thumb, inhale left for 4 counts.\n"+
+"2. Close the left nostril with the ring finger, release the right, exhale right for 4 counts.\n"+
+"3. Inhale right for 4, close right, exhale left for 4. That's one round — repeat 5–10 rounds.\n\n"+
+"• Never force the breath or hold until uncomfortable.\n"+
+"• Keep the exhale longer than or equal to the inhale to engage the calming response.\n"+
+"• Good before exercise, before meditation, or anytime you feel stressed.",
+
+  twinheart:
+"Master Choa Kok Sui's Meditation on Twin Hearts — a loving-kindness meditation that blesses the earth while "+
+"activating the heart and crown chakras. ~15–20 minutes, seated with spine straight, eyes closed.\n\n"+
+"General flow:\n"+
+"1. Invocation — ask for divine guidance and blessing before beginning.\n"+
+"2. Blessing the Earth — silently radiate loving-kindness to loved ones, strangers, and those you find "+
+"difficult, extending it to your city, country, and the whole planet.\n"+
+"3. Activate heart and crown — with each blessing, feel love radiating from the heart chakra (center of chest) "+
+"while energy flows through the crown chakra (top of head) like a fountain of light.\n"+
+"4. Cosmic cleansing — visualize the earth and all beings on it being cleansed and healed by the energy radiated.\n"+
+"5. Cosmic blessing / stillness — after the active blessing, sit in silent stillness for a few minutes.\n"+
+"6. Release excess energy — ground any leftover energy by blessing the earth once more, then gently open your eyes.\n\n"+
+"• A service-oriented meditation — the more you give, the more comes back.\n"+
+"• Drink extra water afterward; the practice can bring up a lot of energy.\n"+
+"• This is a quick-reference summary — see the full Pranic Healing book/audio for the complete guided steps.",
+
+  oilpulling:
+"An Ayurvedic oral-detox practice, done first thing in the morning, before brushing teeth or drinking anything.\n\n"+
+"Best practice:\n"+
+"1. Take 1 tablespoon of cold-pressed coconut or sesame oil (start with 1 tsp if you're new to it).\n"+
+"2. Swish gently around the mouth and through the teeth for 15–20 minutes — do NOT gargle or swallow. The oil "+
+"will thin and turn milky white as it mixes with saliva.\n"+
+"3. Spit the oil into a trash can or tissue, not the sink or toilet (it can solidify and clog pipes over time).\n"+
+"4. Rinse your mouth well with warm water (a salt-water rinse works well too).\n"+
+"5. Brush your teeth as normal afterward.\n\n"+
+"• Do it daily on an empty stomach for best results.\n"+
+"• Never swallow the oil — it has pulled bacteria and toxins out of the mouth.\n"+
+"• If 15–20 minutes feels too long at first, build up gradually from 5 minutes.\n"+
+"• Reported benefits: fresher breath, whiter teeth, healthier gums — pair with regular brushing/flossing, not a replacement for them."
+};
+
+function seed(){
+  return {
+    version:1,
+    habits:[
+      {id:uid(), name:"Exercise", icon:"🏃", guide:GUIDES.exercise, archived:false, order:0, createdAt:todayStr()},
+      {id:uid(), name:"Breathing Exercise", icon:"🌬️", guide:GUIDES.breathing, archived:false, order:1, createdAt:todayStr()},
+      {id:uid(), name:"Twin Heart Meditation", icon:"💗", guide:GUIDES.twinheart, archived:false, order:2, createdAt:todayStr()},
+      {id:uid(), name:"Oil Pulling", icon:"🫙", guide:GUIDES.oilpulling, archived:false, order:3, createdAt:todayStr()}
+    ],
+    logs:{},
+    settings:{theme:"day", reminders:{enabled:false, time:"06:30"}, lastFired:{}}
+  };
+}
+
+var DB = load();
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(!raw) return seed();
+    var d = JSON.parse(raw);
+    if(!d.settings) d.settings={theme:"day", reminders:{enabled:false,time:"06:30"}, lastFired:{}};
+    if(!d.settings.reminders) d.settings.reminders={enabled:false,time:"06:30"};
+    if(!d.settings.lastFired) d.settings.lastFired={};
+    if(!d.logs) d.logs={};
+    return d;
+  }catch(e){ return seed(); }
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
+
+/* ---------- data helpers ---------- */
+function byId(arr,id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return null; }
+function activeHabits(){ return DB.habits.filter(function(h){return !h.archived;}).sort(function(a,b){return a.order-b.order;}); }
+function logFor(date){ return DB.logs[date] || []; }
+function isDone(date, habitId){ return logFor(date).indexOf(habitId) >= 0; }
+function toggleDone(date, habitId){
+  var arr = DB.logs[date] || (DB.logs[date]=[]);
+  var i = arr.indexOf(habitId);
+  if(i>=0) arr.splice(i,1); else arr.push(habitId);
+  if(arr.length===0) delete DB.logs[date];
+  save();
+}
+function currentStreak(habitId){
+  var d = todayStr();
+  if(!isDone(d, habitId)) d = addDays(d, -1);
+  var count=0;
+  while(isDone(d, habitId)){ count++; d = addDays(d, -1); }
+  return count;
+}
+function longestStreak(habitId){
+  var dates = Object.keys(DB.logs).filter(function(k){ return DB.logs[k].indexOf(habitId)>=0; }).sort();
+  var best=0, run=0, prev=null;
+  dates.forEach(function(d){
+    if(prev && addDays(prev,1)===d) run++; else run=1;
+    if(run>best) best=run;
+    prev=d;
+  });
+  return best;
+}
+function totalCount(habitId){
+  var n=0; for(var k in DB.logs) if(DB.logs[k].indexOf(habitId)>=0) n++; return n;
+}
+function dayCompletion(date){
+  var habits = activeHabits();
+  if(!habits.length) return null;
+  var done = habits.filter(function(h){ return isDone(date,h.id); }).length;
+  return {done:done, total:habits.length};
+}
+
+/* ---------- nav ---------- */
+var TABS = [
+  {id:"today", label:"Today", ico:"◎"},
+  {id:"habits", label:"Habits", ico:"☰"},
+  {id:"calendar", label:"Calendar", ico:"▦"},
+  {id:"settings", label:"Settings", ico:"⚙"}
+];
+var state = { view:"today", params:{date:todayStr()}, calMonth:new Date(), habitCalMonth:new Date() };
+
+function navigate(view, params){
+  state.view=view; state.params=params||{};
+  if(view==="today" && !state.params.date) state.params.date=todayStr();
+  if(view==="habitDetail") state.habitCalMonth=new Date();
+  render();
+  document.getElementById("sidebar").classList.remove("open");
+  window.scrollTo(0,0);
+}
+
+function renderNav(){
+  var el=document.getElementById("navtabs");
+  var html="";
+  TABS.forEach(function(t){
+    var on = state.view===t.id || (t.id==="habits" && state.view==="habitDetail");
+    html += '<button data-nav="'+t.id+'" class="'+(on?"on":"")+'"><span class="ico">'+t.ico+'</span>'+t.label+'</button>';
+  });
+  el.innerHTML=html;
+}
+function renderCrumb(){
+  var el=document.getElementById("crumb");
+  el.innerHTML = state.view==="today" ? '<b>'+(state.params.date===todayStr()?"Today":fmtDate(state.params.date))+'</b>' : "";
+}
+
+/* ---------- render root ---------- */
+function render(){
+  renderNav(); renderCrumb();
+  var v=document.getElementById("view");
+  if(state.view==="today") v.innerHTML=viewToday(state.params.date);
+  else if(state.view==="habits") v.innerHTML=viewHabits();
+  else if(state.view==="habitDetail") v.innerHTML=viewHabitDetail(state.params.id);
+  else if(state.view==="calendar") v.innerHTML=viewCalendar();
+  else if(state.view==="settings") v.innerHTML=viewSettings();
+}
+
+function esc(s){ return (s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+/* ---------- Today ---------- */
+function viewToday(date){
+  var habits = activeHabits();
+  var comp = dayCompletion(date);
+  var h = '<div class="datebar"><button class="icon-btn" data-act="dayPrev">‹</button><b>'+fmtDate(date)+'</b><button class="icon-btn" data-act="dayNext" '+(date>=todayStr()?'style="visibility:hidden"':'')+'>›</button></div>';
+
+  if(!habits.length){
+    h += '<div class="empty-state">No habits yet. <a href="#" data-act="goHabits">Add your first habit</a>.</div>';
+    return h;
+  }
+
+  if(comp){
+    var pct = Math.round(100*comp.done/comp.total);
+    h += '<div class="card"><div class="pct">'+comp.done+' of '+comp.total+' habits done'+(pct===100?" — nice work! 🎉":"")+'</div>';
+    h += '<div class="pbar '+(pct<100?"mid":"")+'"><span style="width:'+pct+'%"></span></div></div>';
+  }
+
+  h += '<div class="list">';
+  habits.forEach(function(hb){
+    var done = isDone(date, hb.id);
+    var st = currentStreak(hb.id);
+    h += '<div class="habitrow '+(done?"done":"")+'">';
+    h += '<div class="chk '+(done?"done":"")+'" data-act="toggleHabit" data-id="'+hb.id+'">✓</div>';
+    h += '<div class="ico">'+hb.icon+'</div>';
+    h += '<div class="body" data-act="openHabit" data-id="'+hb.id+'"><div class="name">'+esc(hb.name)+'</div>';
+    h += '<div class="streak">'+(st>0 ? '<b>🔥 '+st+'-day streak</b>' : 'No current streak')+'</div></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+/* ---------- Habits ---------- */
+function viewHabits(){
+  var h='<h1>Habits</h1><div class="sub">Manage the habits you track daily.</div>';
+  h+='<div class="card"><h3>Add a habit</h3>';
+  h+='<div class="addrow"><input type="text" id="newIcon" class="icopick" placeholder="🙂" maxlength="4" value="✅"><input type="text" id="newName" placeholder="Habit name…"><button class="btn" data-act="addHabit">Add</button></div>';
+  h+='</div>';
+
+  h+='<div class="list">';
+  var all = DB.habits.slice().sort(function(a,b){return a.order-b.order;});
+  if(!all.length) h+='<div class="empty-state">No habits yet — add one above.</div>';
+  all.forEach(function(hb){
+    var st=currentStreak(hb.id), tot=totalCount(hb.id);
+    h+='<div class="item-card '+(hb.archived?"archived":"")+'" data-act="openHabit" data-id="'+hb.id+'">';
+    h+='<div class="ico">'+hb.icon+'</div>';
+    h+='<div style="flex:1"><div class="title">'+esc(hb.name)+(hb.archived?' <span class="card-muted">(archived)</span>':'')+'</div>';
+    h+='<div class="meta">'+(st>0?st+'-day streak · ':'')+tot+' total completions</div></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function viewHabitDetail(id){
+  var hb = byId(DB.habits, id);
+  if(!hb) return '<div class="empty-state">Habit not found.</div>';
+  var st=currentStreak(id), best=longestStreak(id), tot=totalCount(id);
+
+  var h='<h1>'+hb.icon+' '+esc(hb.name)+'</h1>';
+
+  h+='<div class="stats">';
+  h+='<div class="stat"><b>'+st+'</b><span>Current streak</span></div>';
+  h+='<div class="stat"><b>'+best+'</b><span>Longest streak</span></div>';
+  h+='<div class="stat"><b>'+tot+'</b><span>Total done</span></div>';
+  h+='</div>';
+
+  h+='<div class="card"><h3>Edit habit</h3>';
+  h+='<div class="addrow"><input type="text" class="icopick" data-act="editIcon" data-id="'+id+'" value="'+esc(hb.icon)+'" maxlength="4">';
+  h+='<input type="text" data-act="editName" data-id="'+id+'" value="'+esc(hb.name)+'"></div>';
+  h+='<div style="margin-top:.8rem">';
+  h+='<button class="btn ghost sm" data-act="archiveHabit" data-id="'+id+'">'+(hb.archived?"Unarchive":"Archive")+'</button> ';
+  h+='<button class="btn danger sm" data-act="deleteHabit" data-id="'+id+'">Delete</button>';
+  h+='</div></div>';
+
+  h+='<div class="card"><h3>Best-practice guide</h3>';
+  h+='<div class="card-muted" style="margin-bottom:.5rem">Edit freely — this is your own reference, saved automatically.</div>';
+  h+='<textarea class="notes" data-act="editGuide" data-id="'+id+'">'+esc(hb.guide)+'</textarea>';
+  h+='</div>';
+
+  h+='<h2>History</h2>';
+  h+=habitCalendarHtml(id);
+
+  h+='<button class="btn ghost sm" data-act="back" data-view="habits">← All habits</button>';
+  return h;
+}
+
+function habitCalendarHtml(habitId){
+  var m=state.habitCalMonth;
+  var year=m.getFullYear(), mon=m.getMonth();
+  var first=new Date(year,mon,1);
+  var startPad=first.getDay();
+  var daysInMonth=new Date(year,mon+1,0).getDate();
+  var h='<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">';
+  h+='<button class="icon-btn" data-act="hCalPrev">‹</button>';
+  h+='<b>'+first.toLocaleDateString(undefined,{month:"long",year:"numeric"})+'</b>';
+  h+='<button class="icon-btn" data-act="hCalNext">›</button>';
+  h+='</div>';
+  h+='<div class="calgrid">';
+  ["S","M","T","W","T","F","S"].forEach(function(d){ h+='<div class="dow">'+d+'</div>'; });
+  for(var i=0;i<startPad;i++) h+='<div class="calcell empty"></div>';
+  for(var d=1; d<=daysInMonth; d++){
+    var ds=year+"-"+pad(mon+1)+"-"+pad(d);
+    var done = isDone(ds, habitId);
+    h+='<div class="calcell '+(ds===todayStr()?"today":"")+'" data-act="openDay" data-date="'+ds+'">'+d+'<span class="dot '+(done?"good":"none")+'"></span></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ---------- Calendar (overall) ---------- */
+function viewCalendar(){
+  var m=state.calMonth;
+  var year=m.getFullYear(), mon=m.getMonth();
+  var first=new Date(year,mon,1);
+  var startPad=first.getDay();
+  var daysInMonth=new Date(year,mon+1,0).getDate();
+  var h='<h1>Calendar</h1><div class="sub">Overall completion across all habits.</div>';
+  h+='<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">';
+  h+='<button class="icon-btn" data-act="calPrev">‹</button>';
+  h+='<b>'+first.toLocaleDateString(undefined,{month:"long",year:"numeric"})+'</b>';
+  h+='<button class="icon-btn" data-act="calNext">›</button>';
+  h+='</div>';
+  h+='<div class="calgrid">';
+  ["S","M","T","W","T","F","S"].forEach(function(d){ h+='<div class="dow">'+d+'</div>'; });
+  for(var i=0;i<startPad;i++) h+='<div class="calcell empty"></div>';
+  for(var d=1; d<=daysInMonth; d++){
+    var ds=year+"-"+pad(mon+1)+"-"+pad(d);
+    var comp=dayCompletion(ds);
+    var dotClass="none";
+    if(comp && comp.done>0) dotClass = comp.done===comp.total ? "good" : "mid";
+    h+='<div class="calcell '+(ds===todayStr()?"today":"")+'" data-act="openDay" data-date="'+ds+'">'+d+'<span class="dot '+dotClass+'"></span></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ---------- Settings ---------- */
+function viewSettings(){
+  var r=DB.settings.reminders;
+  var h='<h1>Settings</h1>';
+  h+='<div class="card"><h3>Reminder</h3>';
+  h+='<div class="card-muted">Fires only while Leo-Ritual is open in a browser tab — this is an offline, static app with no server to push notifications when it\'s closed.</div>';
+  h+='<div class="field"><label><input type="checkbox" id="remEnabled" '+(r.enabled?"checked":"")+' data-act="toggleReminders"> Enable daily reminder</label></div>';
+  h+='<div class="field"><label>Reminder time</label><input type="time" id="remTime" value="'+r.time+'" data-act="setRemTime"></div>';
+  h+='</div>';
+
+  h+='<div class="card"><h3>Appearance</h3><button class="btn ghost sm" data-act="themeToggle">Toggle light / dark</button></div>';
+
+  h+='<div class="card"><h3>Backup</h3>';
+  h+='<button class="btn ghost sm" data-act="exportData">Export JSON</button> ';
+  h+='<label class="btn ghost sm" style="display:inline-block">Import JSON<input type="file" id="importFile" accept="application/json" style="display:none" data-act="importData"></label>';
+  h+='</div>';
+
+  h+='<div class="card"><h3 style="color:var(--warn)">Danger zone</h3>';
+  h+='<button class="btn danger sm" data-act="clearAll">Clear all data</button></div>';
+  return h;
+}
+
+/* ---------- actions ---------- */
+document.addEventListener("click", function(e){
+  var el=e.target.closest("[data-act]");
+  if(!el) return;
+  var act=el.getAttribute("data-act");
+  var id=el.getAttribute("data-id");
+  var date=el.getAttribute("data-date");
+
+  switch(act){
+    case "dayPrev": navigate("today",{date:addDays(state.params.date,-1)}); return;
+    case "dayNext": navigate("today",{date:addDays(state.params.date,1)}); return;
+    case "toggleHabit": toggleDone(state.params.date, id); render(); return;
+    case "openHabit": navigate("habitDetail",{id:id}); return;
+    case "goHabits": e.preventDefault(); navigate("habits"); return;
+
+    case "addHabit": {
+      var icoEl=document.getElementById("newIcon"), nameEl=document.getElementById("newName");
+      var name=nameEl.value.trim(); var ico=icoEl.value.trim()||"✅";
+      if(name){
+        var maxOrder=DB.habits.reduce(function(m,h){return Math.max(m,h.order);},-1);
+        DB.habits.push({id:uid(), name:name, icon:ico, guide:"", archived:false, order:maxOrder+1, createdAt:todayStr()});
+        save(); navigate("habits");
+      }
+      return;
+    }
+    case "archiveHabit": { var hb=byId(DB.habits,id); hb.archived=!hb.archived; save(); render(); return; }
+    case "deleteHabit": {
+      if(confirm("Delete this habit and all its history? This cannot be undone.")){
+        DB.habits=DB.habits.filter(function(h){return h.id!==id;});
+        for(var k in DB.logs){ var i=DB.logs[k].indexOf(id); if(i>=0){ DB.logs[k].splice(i,1); if(!DB.logs[k].length) delete DB.logs[k]; } }
+        save(); navigate("habits");
+      }
+      return;
+    }
+
+    case "openDay": navigate("today",{date:date}); return;
+    case "calPrev": state.calMonth=new Date(state.calMonth.getFullYear(),state.calMonth.getMonth()-1,1); render(); return;
+    case "calNext": state.calMonth=new Date(state.calMonth.getFullYear(),state.calMonth.getMonth()+1,1); render(); return;
+    case "hCalPrev": state.habitCalMonth=new Date(state.habitCalMonth.getFullYear(),state.habitCalMonth.getMonth()-1,1); render(); return;
+    case "hCalNext": state.habitCalMonth=new Date(state.habitCalMonth.getFullYear(),state.habitCalMonth.getMonth()+1,1); render(); return;
+
+    case "toggleReminders": DB.settings.reminders.enabled=document.getElementById("remEnabled").checked; save(); render(); return;
+    case "themeToggle": {
+      var html=document.documentElement;
+      var cur=html.getAttribute("data-theme");
+      html.setAttribute("data-theme", cur==="dark"?"day":"dark");
+      DB.settings.theme=html.getAttribute("data-theme"); save();
+      return;
+    }
+    case "exportData": {
+      var blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+      var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+      a.download="leo-ritual-backup-"+todayStr()+".json"; a.click();
+      return;
+    }
+    case "clearAll": {
+      if(confirm("This deletes ALL Leo-Ritual data on this device. This cannot be undone. Continue?")){
+        localStorage.removeItem(KEY); DB=seed(); save(); navigate("today",{date:todayStr()});
+      }
+      return;
+    }
+    case "back": navigate(el.getAttribute("data-view")); return;
+  }
+});
+
+document.addEventListener("change", function(e){
+  var el=e.target;
+  var act=el.getAttribute("data-act");
+  if(!act) return;
+  switch(act){
+    case "setRemTime": DB.settings.reminders.time=el.value; save(); return;
+    case "importData": {
+      var f=el.files[0]; if(!f) return;
+      var reader=new FileReader();
+      reader.onload=function(){
+        try{
+          var d=JSON.parse(reader.result);
+          if(confirm("Replace all current data with the imported file?")){ DB=d; save(); navigate("today",{date:todayStr()}); }
+        }catch(err){ alert("Invalid JSON file."); }
+      };
+      reader.readAsText(f);
+      return;
+    }
+  }
+});
+
+document.addEventListener("input", function(e){
+  var el=e.target;
+  var act=el.getAttribute("data-act");
+  if(!act) return;
+  var id=el.getAttribute("data-id");
+  switch(act){
+    case "editName": byId(DB.habits,id).name=el.value; save(); return;
+    case "editIcon": byId(DB.habits,id).icon=el.value; save(); return;
+    case "editGuide": byId(DB.habits,id).guide=el.value; save(); return;
+  }
+});
+/* re-render crumb/sidebar labels after name/icon edits lose focus, without losing cursor mid-type */
+document.addEventListener("blur", function(e){
+  var act=e.target.getAttribute && e.target.getAttribute("data-act");
+  if(act==="editName" || act==="editIcon") render();
+}, true);
+
+/* nav clicks */
+document.getElementById("navtabs").addEventListener("click", function(e){
+  var b=e.target.closest("[data-nav]");
+  if(!b) return;
+  var v=b.getAttribute("data-nav");
+  if(v==="today") navigate("today",{date:todayStr()});
+  else navigate(v);
+});
+document.getElementById("menuBtn").addEventListener("click", function(){
+  document.getElementById("sidebar").classList.toggle("open");
+});
+document.getElementById("themeBtn").addEventListener("click", function(){
+  var html=document.documentElement;
+  var cur=html.getAttribute("data-theme");
+  html.setAttribute("data-theme", cur==="dark"?"day":"dark");
+  DB.settings.theme=html.getAttribute("data-theme"); save();
+});
+document.addEventListener("keydown", function(e){
+  if(e.key!=="Enter") return;
+  if(e.target.id==="newName"){ document.querySelector('[data-act="addHabit"]').click(); }
+});
+
+/* ---------- reminder (while tab open) ---------- */
+function checkReminder(){
+  var r=DB.settings.reminders;
+  if(!r.enabled) return;
+  if(typeof Notification!=="undefined" && Notification.permission==="default"){
+    Notification.requestPermission();
+  }
+  var now=new Date(); var hhmm=pad(now.getHours())+":"+pad(now.getMinutes());
+  var key=todayStr();
+  var comp=dayCompletion(todayStr());
+  if(hhmm===r.time && comp && comp.done<comp.total && DB.settings.lastFired[key]!==true){
+    DB.settings.lastFired[key]=true; save();
+    if(typeof Notification!=="undefined" && Notification.permission==="granted"){
+      try{ new Notification("Morning ritual", {body:"You still have habits to complete today in Leo-Ritual.", icon:"icon-192.png"}); }catch(e){}
+    }
+  }
+}
+setInterval(checkReminder, 60000);
+
+/* ---------- init ---------- */
+document.documentElement.setAttribute("data-theme", DB.settings.theme==="dark" ? "dark" : "day");
+navigate("today",{date:todayStr()});
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+}
+})();
+</script>
+</body>
+</html>
