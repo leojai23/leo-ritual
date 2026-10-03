@@ -135,6 +135,24 @@ textarea.notes{width:100%; min-height:9rem; padding:.7rem .8rem; border:1px soli
 .stat b{display:block; font-size:1.3rem}
 .stat span{font-size:.72rem; text-transform:uppercase; letter-spacing:.03em}
 
+.viz-wrap{position:relative; margin-top:.5rem}
+.viz-chart{width:100%; height:auto; display:block; overflow:visible}
+.viz-grid{stroke:var(--line); stroke-width:1}
+.viz-axis{font-size:9px; fill:var(--ink-soft)}
+.viz-endlabel{font-size:11px; font-weight:700; fill:var(--ink)}
+.viz-rowlabel{font-size:11px; fill:var(--ink)}
+.viz-barvalue{font-size:11px; font-weight:700; fill:var(--ink)}
+.viz-hit, .viz-barhit{cursor:pointer}
+.viz-crosshair{stroke:var(--ink-soft); stroke-width:1; pointer-events:none}
+.viz-hoverdot{fill:var(--panel); stroke:var(--accent); stroke-width:2; pointer-events:none}
+.viz-tooltip{
+  position:absolute; transform:translate(-50%,-120%); background:var(--ink); color:var(--bg);
+  font-size:.76rem; line-height:1.4; padding:.4rem .6rem; border-radius:.4rem; white-space:nowrap;
+  pointer-events:none; z-index:5; box-shadow:var(--shadow);
+}
+.viz-tooltip b{font-size:.86rem}
+.viz-tt-sub{color:var(--bg); opacity:.75; font-size:.72rem}
+
 .calgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:.35rem; margin-top:.6rem}
 .calgrid .dow{text-align:center; font-size:.72rem; color:var(--ink-soft); font-weight:700; text-transform:uppercase}
 .calcell{aspect-ratio:1; border:1px solid var(--line); border-radius:.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--panel); font-size:.82rem; gap:.25rem}
@@ -199,13 +217,19 @@ function fmtDate(s){
 }
 
 var DEFAULT_CATEGORIES = [
-  {id:"physical", label:"Physical", icon:"💪", order:0},
-  {id:"mental", label:"Mental", icon:"🧘", order:1},
-  {id:"official", label:"Official", icon:"💼", order:2},
-  {id:"personal", label:"Personal", icon:"🏡", order:3},
-  {id:"financial", label:"Financial", icon:"💰", order:4}
+  {id:"physical", label:"Physical", icon:"💪", order:0, colorSlot:0},
+  {id:"mental", label:"Mental", icon:"🧘", order:1, colorSlot:1},
+  {id:"official", label:"Official", icon:"💼", order:2, colorSlot:2},
+  {id:"personal", label:"Personal", icon:"🏡", order:3, colorSlot:3},
+  {id:"financial", label:"Financial", icon:"💰", order:4, colorSlot:4}
 ];
 function cats(){ return DB.categories.slice().sort(function(a,b){return a.order-b.order;}); }
+function nextFreeColorSlot(categories){
+  var used={};
+  categories.forEach(function(c){ if(typeof c.colorSlot==="number") used[c.colorSlot]=true; });
+  for(var i=0;i<8;i++){ if(!used[i]) return i; }
+  return Math.floor(Math.random()*8);
+}
 
 var GUIDES = {
   exercise:
@@ -411,7 +435,7 @@ function seed(){
       h("Savings","🏦",GUIDES.savings,"financial",2),
       h("Read About Investments","📚",GUIDES.readInvestment,"financial",3)
     ],
-    categories: DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; }),
+    categories: DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order, colorSlot:c.colorSlot}; }),
     logs:{},
     settings:{theme:"day", reminders:{enabled:false, time:"06:30"}, lastFired:{}, hiddenCategories:[], lastExportAt:null, exportSnoozedUntil:null}
   };
@@ -430,11 +454,12 @@ function load(){
     if(!("lastExportAt" in d.settings)) d.settings.lastExportAt=null;
     if(!("exportSnoozedUntil" in d.settings)) d.settings.exportSnoozedUntil=null;
     if(!d.logs) d.logs={};
-    if(!d.categories || !d.categories.length) d.categories = DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; });
+    if(!d.categories || !d.categories.length) d.categories = DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order, colorSlot:c.colorSlot}; });
     (d.habits||[]).forEach(function(h){ if(!h.category) h.category="personal"; });
+    d.categories.forEach(function(c){ if(typeof c.colorSlot!=="number") c.colorSlot=nextFreeColorSlot(d.categories); });
     if(!d.categories.some(function(c){ return c.id==="financial"; })){
       var maxCatOrder=d.categories.reduce(function(m,c){return Math.max(m,c.order);},-1);
-      d.categories.push({id:"financial", label:"Financial", icon:"💰", order:maxCatOrder+1});
+      d.categories.push({id:"financial", label:"Financial", icon:"💰", order:maxCatOrder+1, colorSlot:nextFreeColorSlot(d.categories)});
       var maxOrder=(d.habits||[]).reduce(function(m,h){return Math.max(m,h.order);},-1);
       var nd=todayStr();
       d.habits.push(
@@ -530,6 +555,24 @@ function overallCompletionPct(days){
   }
   return Math.round(100*doneSum/total);
 }
+function dailyCompletionSeries(days){
+  var list = activeHabits();
+  var out = [];
+  for(var i=days-1; i>=0; i--){
+    var d = addDays(todayStr(), -i);
+    var pct = null;
+    if(list.length){
+      var done = list.filter(function(h){ return isDone(d,h.id); }).length;
+      pct = Math.round(100*done/list.length);
+    }
+    out.push({date:d, pct:pct});
+  }
+  return out;
+}
+function fmtShort(s){
+  var p=s.split("-"); var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+}
 function daysBetween(a,b){
   var pa=a.split("-"), pb=b.split("-");
   var da=new Date(+pa[0],+pa[1]-1,+pa[2]);
@@ -592,7 +635,7 @@ function render(){
   else if(state.view==="habits") v.innerHTML=viewHabits();
   else if(state.view==="habitDetail") v.innerHTML=viewHabitDetail(state.params.id);
   else if(state.view==="calendar") v.innerHTML=viewCalendar();
-  else if(state.view==="review") v.innerHTML=viewReview();
+  else if(state.view==="review"){ v.innerHTML=viewReview(); initReviewInteractions(); }
   else if(state.view==="settings") v.innerHTML=viewSettings();
 }
 
@@ -767,6 +810,149 @@ function viewCalendar(){
   return h;
 }
 
+/* ---------- Review charts ---------- */
+var VIZ_LIGHT = ["#2a78d6","#eb6834","#1baf7a","#eda100","#e87ba4","#008300","#4a3aa7","#e34948"];
+var VIZ_DARK  = ["#3987e5","#d95926","#199e70","#c98500","#d55181","#008300","#9085e9","#e66767"];
+function vizIsDark(){ return document.documentElement.getAttribute("data-theme")==="dark"; }
+function vizHash(s){ var hh=0; for(var i=0;i<s.length;i++){ hh=(hh*31+s.charCodeAt(i))>>>0; } return hh; }
+function catColor(cat){
+  var arr=vizIsDark()?VIZ_DARK:VIZ_LIGHT;
+  var slot = typeof cat.colorSlot==="number" ? cat.colorSlot : vizHash(cat.id);
+  return arr[slot%arr.length];
+}
+function vizSeqColor(){ return vizIsDark()?"#3987e5":"#2a78d6"; }
+
+function trendChartSvg(series){
+  var W=640, H=180, padL=30, padR=12, padT=14, padB=24;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var n=series.length;
+  function x(i){ return padL + (n<=1?0:(plotW*i/(n-1))); }
+  function y(v){ return padT + plotH - (plotH*Math.max(0,Math.min(100,v))/100); }
+  var seq=vizSeqColor();
+
+  var grid="";
+  [0,50,100].forEach(function(v){
+    var gy=y(v);
+    grid += '<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" class="viz-grid"/>';
+    grid += '<text x="'+(padL-6)+'" y="'+(gy+3)+'" text-anchor="end" class="viz-axis">'+v+'</text>';
+  });
+
+  var pts=[];
+  for(var i=0;i<n;i++) pts.push(x(i)+","+y(series[i].pct==null?0:series[i].pct));
+  var linePath="M"+pts.join(" L");
+  var areaPath=linePath+" L"+x(n-1)+","+(padT+plotH)+" L"+x(0)+","+(padT+plotH)+" Z";
+
+  var lastPct=series[n-1].pct==null?0:series[n-1].pct;
+  var lastX=x(n-1), lastY=y(lastPct);
+
+  var labelIdx = n>1 ? [0, Math.floor((n-1)/2), n-1] : [0];
+  var xlabels="";
+  labelIdx.forEach(function(i){
+    var anchor = i===0 ? "start" : (i===n-1 ? "end" : "middle");
+    xlabels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="'+anchor+'" class="viz-axis">'+fmtShort(series[i].date)+'</text>';
+  });
+
+  var hw = n>1 ? plotW/(n-1) : plotW;
+  var hitRects="";
+  for(var j=0;j<n;j++){
+    var cx=x(j), cy=y(series[j].pct==null?0:series[j].pct);
+    hitRects += '<rect class="viz-hit" data-cx="'+cx+'" data-cy="'+cy+'" data-date="'+series[j].date+'" data-pct="'+(series[j].pct==null?0:series[j].pct)+'" x="'+(cx-hw/2)+'" y="'+padT+'" width="'+hw+'" height="'+plotH+'" fill="transparent"/>';
+  }
+
+  return '<div class="viz-wrap">'+
+    '<svg class="viz-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+      grid+
+      '<path d="'+areaPath+'" fill="'+seq+'" opacity="0.1" stroke="none"/>'+
+      '<path d="'+linePath+'" fill="none" stroke="'+seq+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '<circle cx="'+lastX+'" cy="'+lastY+'" r="4" fill="'+seq+'" stroke="var(--panel)" stroke-width="2"/>'+
+      '<text x="'+(lastX-6)+'" y="'+(lastY<24?lastY+16:lastY-8)+'" text-anchor="end" class="viz-endlabel">'+lastPct+'%</text>'+
+      xlabels+
+      hitRects+
+      '<line class="viz-crosshair" x1="0" y1="'+padT+'" x2="0" y2="'+(padT+plotH)+'" style="display:none"/>'+
+      '<circle class="viz-hoverdot" r="4" style="display:none"/>'+
+    '</svg>'+
+    '<div class="viz-tooltip" style="display:none"></div>'+
+  '</div>';
+}
+
+function categoryBarChartSvg(rows){
+  var W=640, rowH=38, padT=4, padB=4, padL=4;
+  var barX=132, barMaxW=W-barX-56;
+  var n=rows.length;
+  var H=padT+padB+n*rowH;
+
+  var body="";
+  rows.forEach(function(r,i){
+    var cy=padT+i*rowH+rowH/2;
+    var bw=Math.max(barMaxW*Math.max(0,Math.min(100,r.pct7))/100, 3);
+    var by=cy-9;
+    var color=catColor(r.cat);
+    body += '<text x="'+padL+'" y="'+(cy+4)+'" class="viz-rowlabel">'+esc(r.cat.icon)+' '+esc(r.cat.label)+'</text>';
+    body += '<rect x="'+barX+'" y="'+by+'" width="'+bw+'" height="18" rx="4" fill="'+color+'"/>';
+    body += '<text x="'+(barX+bw+8)+'" y="'+(cy+4)+'" class="viz-barvalue">'+r.pct7+'%</text>';
+    body += '<rect class="viz-barhit" data-i="'+i+'" data-label="'+esc(r.cat.icon)+' '+esc(r.cat.label)+'" data-pct7="'+r.pct7+'" data-pct30="'+r.pct30+'" data-streak="'+r.streak+'" x="0" y="'+(padT+i*rowH)+'" width="'+W+'" height="'+rowH+'" fill="transparent"/>';
+  });
+
+  return '<div class="viz-wrap">'+
+    '<svg class="viz-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+body+'</svg>'+
+    '<div class="viz-tooltip" style="display:none"></div>'+
+  '</div>';
+}
+
+function initReviewInteractions(){
+  var wraps = document.querySelectorAll('#view .viz-wrap');
+  wraps.forEach(function(wrap){
+    var svg = wrap.querySelector('.viz-chart');
+    var tooltip = wrap.querySelector('.viz-tooltip');
+    if(!svg) return;
+    var vb = svg.viewBox.baseVal;
+    var crosshair = svg.querySelector('.viz-crosshair');
+
+    if(crosshair){
+      svg.querySelectorAll('.viz-hit').forEach(function(hit){
+        function show(){
+          var cx=+hit.getAttribute('data-cx'), cy=+hit.getAttribute('data-cy');
+          crosshair.setAttribute('x1',cx); crosshair.setAttribute('x2',cx); crosshair.style.display='';
+          var dot=svg.querySelector('.viz-hoverdot');
+          dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.style.display='';
+          tooltip.innerHTML='';
+          var b=document.createElement('b'); b.textContent=hit.getAttribute('data-pct')+'%';
+          var sp=document.createElement('span'); sp.textContent=' · '+fmtShort(hit.getAttribute('data-date'));
+          tooltip.appendChild(b); tooltip.appendChild(sp);
+          tooltip.style.left=(cx/vb.width*100)+'%';
+          tooltip.style.top=(cy/vb.height*100)+'%';
+          tooltip.style.display='';
+        }
+        hit.addEventListener('pointerenter', show);
+        hit.addEventListener('pointermove', show);
+        hit.addEventListener('pointerleave', function(){
+          crosshair.style.display='none';
+          svg.querySelector('.viz-hoverdot').style.display='none';
+          tooltip.style.display='none';
+        });
+      });
+    } else {
+      svg.querySelectorAll('.viz-barhit').forEach(function(hit){
+        function show(){
+          var r=hit.getBBox();
+          tooltip.innerHTML='';
+          var line1=document.createElement('div');
+          var b=document.createElement('b'); b.textContent=hit.getAttribute('data-pct7')+'% last 7d';
+          line1.appendChild(b);
+          var line2=document.createElement('div'); line2.className='viz-tt-sub';
+          line2.textContent=hit.getAttribute('data-pct30')+'% last 30d'+(+hit.getAttribute('data-streak')>0?' · 🔥 '+hit.getAttribute('data-streak')+'-day streak':'');
+          tooltip.appendChild(line1); tooltip.appendChild(line2);
+          tooltip.style.left=((r.x+r.width/2)/vb.width*100)+'%';
+          tooltip.style.top=((r.y)/vb.height*100)+'%';
+          tooltip.style.display='';
+        }
+        hit.addEventListener('pointerenter', show);
+        hit.addEventListener('pointerleave', function(){ tooltip.style.display='none'; });
+      });
+    }
+  });
+}
+
 /* ---------- Review ---------- */
 function viewReview(){
   var h='<h1>Review</h1><div class="sub">Completion trends over the last 7 and 30 days.</div>';
@@ -778,18 +964,22 @@ function viewReview(){
   h+='<div class="stat"><b>'+o30+'%</b><span>Overall, last 30 days</span></div>';
   h+='</div>';
 
-  cats().forEach(function(cat){
+  h+='<div class="card"><h3>Daily completion — last 14 days</h3>';
+  h+=trendChartSvg(dailyCompletionSeries(14));
+  h+='</div>';
+
+  var rows = cats().map(function(cat){
     var list = activeHabits().filter(function(hb){ return hb.category===cat.id; });
-    if(!list.length) return;
-    var p7=categoryCompletionPct(cat.id,7), p30=categoryCompletionPct(cat.id,30);
-    var st=categoryStreak(cat.id);
-    h+='<div class="card"><h3>'+cat.icon+' '+esc(cat.label)+(st>0?' <span class="card-muted">· 🔥 '+st+'-day streak</span>':'')+'</h3>';
-    h+='<div class="pct">Last 7 days — '+p7+'%</div>';
-    h+='<div class="pbar '+(p7<100?"mid":"")+'"><span style="width:'+p7+'%"></span></div>';
-    h+='<div class="pct" style="margin-top:.7rem">Last 30 days — '+p30+'%</div>';
-    h+='<div class="pbar '+(p30<100?"mid":"")+'"><span style="width:'+p30+'%"></span></div>';
+    if(!list.length) return null;
+    return {cat:cat, pct7:categoryCompletionPct(cat.id,7), pct30:categoryCompletionPct(cat.id,30), streak:categoryStreak(cat.id)};
+  }).filter(function(r){ return r; });
+
+  if(rows.length){
+    h+='<div class="card"><h3>Category completion — last 7 days</h3>';
+    h+='<div class="card-muted" style="margin-bottom:.3rem">Hover a row for the 30-day figure and streak.</div>';
+    h+=categoryBarChartSvg(rows);
     h+='</div>';
-  });
+  }
   return h;
 }
 
@@ -916,7 +1106,7 @@ document.addEventListener("click", function(e){
       var label=labelEl.value.trim(); var icoC=icoCEl.value.trim()||"🏷️";
       if(label){
         var maxCatOrder=DB.categories.reduce(function(m,c){return Math.max(m,c.order);},-1);
-        DB.categories.push({id:"cat"+uid(), label:label, icon:icoC, order:maxCatOrder+1});
+        DB.categories.push({id:"cat"+uid(), label:label, icon:icoC, order:maxCatOrder+1, colorSlot:nextFreeColorSlot(DB.categories)});
         save(); render();
       }
       return;
@@ -927,7 +1117,7 @@ document.addEventListener("click", function(e){
       var html=document.documentElement;
       var cur=html.getAttribute("data-theme");
       html.setAttribute("data-theme", cur==="dark"?"day":"dark");
-      DB.settings.theme=html.getAttribute("data-theme"); save();
+      DB.settings.theme=html.getAttribute("data-theme"); save(); render();
       return;
     }
     case "exportData": {
@@ -1008,7 +1198,7 @@ document.getElementById("themeBtn").addEventListener("click", function(){
   var html=document.documentElement;
   var cur=html.getAttribute("data-theme");
   html.setAttribute("data-theme", cur==="dark"?"day":"dark");
-  DB.settings.theme=html.getAttribute("data-theme"); save();
+  DB.settings.theme=html.getAttribute("data-theme"); save(); render();
 });
 document.addEventListener("keydown", function(e){
   if(e.key!=="Enter") return;

@@ -1,5 +1,5 @@
 /* Leo-Ritual service worker — cache-first, versioned by content hash */
-var CACHE = "leo-ritual-v5";
+var CACHE = "leo-ritual-v6";
 var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", function(e){
   self.skipWaiting();
