@@ -18,8 +18,9 @@ Pre-loaded habits (4 per category):
 
 Features:
 
-- **Today view** — check off each habit for the day, grouped by category, with a
-  running streak per habit
+- **Today view** — check off each individual habit, grouped by category, with a
+  per-habit streak, a per-category done count + category streak (all habits in that
+  category done that day), and chips to show/hide whole categories
 - **Habits** — add, rename, re-icon, re-categorize, archive, or delete habits;
   fully editable, not locked to the starting 16
 - **Best-practice guide per habit** — each habit opens to an editable reference page;
@@ -30,6 +31,10 @@ Features:
   per-habit monthly calendar of done/not-done days
 - **Calendar** — month grid showing overall completion across all habits, click any
   date to jump to that day
+- **Review** — 7-day and 30-day completion trends, overall and per category
+- **Categories** — Physical / Mental / Official / Personal out of the box, but fully
+  editable in Settings: rename, re-icon, reorder, add, or delete (deleting moves its
+  habits to another category rather than losing them)
 - **Reminder** — in-app + browser notification at a set time, *while the tab is open*
   (this is a static offline app — no server, so there's no push when the tab/browser
   is closed)

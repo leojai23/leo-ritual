@@ -112,6 +112,10 @@ nav.tabs button .ico{width:1.1rem; text-align:center; opacity:.85}
 .addrow select, .field select{padding:.55rem .7rem; border:1px solid var(--line); border-radius:.55rem; background:var(--bg-2); color:var(--ink)}
 .field select{width:100%}
 .cathead{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); margin:1.4rem 0 .6rem; display:flex; align-items:center; gap:.4rem}
+.cathead-meta{color:var(--ink-soft); font-weight:600}
+.catchips{display:flex; flex-wrap:wrap; gap:.4rem; margin:1rem 0 .3rem}
+.chip-toggle{font-size:.78rem; font-weight:600; padding:.3rem .75rem; border-radius:99px; border:1px solid var(--accent); background:var(--chip); color:var(--chip-ink); cursor:pointer}
+.chip-toggle.off{opacity:.5; background:none; border-color:var(--line); color:var(--ink-soft)}
 .addrow button, .btn{padding:.55rem .9rem; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:.55rem; cursor:pointer; font-weight:600; white-space:nowrap}
 .btn.ghost{background:none; color:var(--ink); border-color:var(--line)}
 .btn.danger{background:var(--warn); border-color:var(--warn); color:#fff}
@@ -193,13 +197,13 @@ function fmtDate(s){
   return d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 }
 
-var CATEGORIES = [
-  {id:"physical", label:"Physical", icon:"💪"},
-  {id:"mental", label:"Mental", icon:"🧘"},
-  {id:"official", label:"Official", icon:"💼"},
-  {id:"personal", label:"Personal", icon:"🏡"}
+var DEFAULT_CATEGORIES = [
+  {id:"physical", label:"Physical", icon:"💪", order:0},
+  {id:"mental", label:"Mental", icon:"🧘", order:1},
+  {id:"official", label:"Official", icon:"💼", order:2},
+  {id:"personal", label:"Personal", icon:"🏡", order:3}
 ];
-function catLabel(id){ var c=byId(CATEGORIES,id); return c?c.label:"Personal"; }
+function cats(){ return DB.categories.slice().sort(function(a,b){return a.order-b.order;}); }
 
 var GUIDES = {
   exercise:
@@ -375,8 +379,9 @@ function seed(){
       h("Connect with a Loved One","☎️",GUIDES.connect,"personal",2),
       h("Declutter One Small Space","🧹",GUIDES.declutter,"personal",3)
     ],
+    categories: DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; }),
     logs:{},
-    settings:{theme:"day", reminders:{enabled:false, time:"06:30"}, lastFired:{}}
+    settings:{theme:"day", reminders:{enabled:false, time:"06:30"}, lastFired:{}, hiddenCategories:[]}
   };
 }
 
@@ -386,10 +391,12 @@ function load(){
     var raw = localStorage.getItem(KEY);
     if(!raw) return seed();
     var d = JSON.parse(raw);
-    if(!d.settings) d.settings={theme:"day", reminders:{enabled:false,time:"06:30"}, lastFired:{}};
+    if(!d.settings) d.settings={theme:"day", reminders:{enabled:false,time:"06:30"}, lastFired:{}, hiddenCategories:[]};
     if(!d.settings.reminders) d.settings.reminders={enabled:false,time:"06:30"};
     if(!d.settings.lastFired) d.settings.lastFired={};
+    if(!d.settings.hiddenCategories) d.settings.hiddenCategories=[];
     if(!d.logs) d.logs={};
+    if(!d.categories || !d.categories.length) d.categories = DEFAULT_CATEGORIES.map(function(c){ return {id:c.id, label:c.label, icon:c.icon, order:c.order}; });
     (d.habits||[]).forEach(function(h){ if(!h.category) h.category="personal"; });
     return d;
   }catch(e){ return seed(); }
@@ -398,12 +405,18 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
 
 /* ---------- data helpers ---------- */
 function byId(arr,id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return null; }
+function indexOfId(arr,id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return i; return -1; }
 function activeHabits(){ return DB.habits.filter(function(h){return !h.archived;}).sort(function(a,b){return a.order-b.order;}); }
 function groupByCategory(list){
+  var categories = cats();
   var out={};
-  CATEGORIES.forEach(function(c){ out[c.id]=[]; });
-  list.forEach(function(h){ (out[h.category]||out.personal).push(h); });
-  CATEGORIES.forEach(function(c){ out[c.id].sort(function(a,b){return a.order-b.order;}); });
+  categories.forEach(function(c){ out[c.id]=[]; });
+  var fallbackId = categories.length ? categories[0].id : null;
+  list.forEach(function(h){
+    var bucket = out[h.category] ? h.category : fallbackId;
+    if(bucket) out[bucket].push(h);
+  });
+  categories.forEach(function(c){ out[c.id].sort(function(a,b){return a.order-b.order;}); });
   return out;
 }
 function logFor(date){ return DB.logs[date] || []; }
@@ -441,12 +454,43 @@ function dayCompletion(date){
   var done = habits.filter(function(h){ return isDone(date,h.id); }).length;
   return {done:done, total:habits.length};
 }
+function categoryStreak(catId){
+  var list = activeHabits().filter(function(h){ return h.category===catId; });
+  if(!list.length) return 0;
+  function allDone(date){ return list.every(function(h){ return isDone(date,h.id); }); }
+  var d = todayStr();
+  if(!allDone(d)) d = addDays(d,-1);
+  var count=0;
+  while(allDone(d)){ count++; d = addDays(d,-1); }
+  return count;
+}
+function categoryCompletionPct(catId, days){
+  var list = activeHabits().filter(function(h){ return h.category===catId; });
+  if(!list.length) return null;
+  var doneSum=0, total=0;
+  for(var i=0;i<days;i++){
+    var d = addDays(todayStr(), -i);
+    list.forEach(function(h){ total++; if(isDone(d,h.id)) doneSum++; });
+  }
+  return Math.round(100*doneSum/total);
+}
+function overallCompletionPct(days){
+  var list = activeHabits();
+  if(!list.length) return null;
+  var doneSum=0, total=0;
+  for(var i=0;i<days;i++){
+    var d = addDays(todayStr(), -i);
+    list.forEach(function(h){ total++; if(isDone(d,h.id)) doneSum++; });
+  }
+  return Math.round(100*doneSum/total);
+}
 
 /* ---------- nav ---------- */
 var TABS = [
   {id:"today", label:"Today", ico:"◎"},
   {id:"habits", label:"Habits", ico:"☰"},
   {id:"calendar", label:"Calendar", ico:"▦"},
+  {id:"review", label:"Review", ico:"📈"},
   {id:"settings", label:"Settings", ico:"⚙"}
 ];
 var state = { view:"today", params:{date:todayStr()}, calMonth:new Date(), habitCalMonth:new Date() };
@@ -482,6 +526,7 @@ function render(){
   else if(state.view==="habits") v.innerHTML=viewHabits();
   else if(state.view==="habitDetail") v.innerHTML=viewHabitDetail(state.params.id);
   else if(state.view==="calendar") v.innerHTML=viewCalendar();
+  else if(state.view==="review") v.innerHTML=viewReview();
   else if(state.view==="settings") v.innerHTML=viewSettings();
 }
 
@@ -505,10 +550,24 @@ function viewToday(date){
   }
 
   var grouped = groupByCategory(habits);
-  CATEGORIES.forEach(function(cat){
+  var categories = cats();
+
+  h += '<div class="catchips">';
+  categories.forEach(function(cat){
     var list = grouped[cat.id];
     if(!list.length) return;
-    h += '<div class="cathead">'+cat.icon+' '+cat.label+'</div>';
+    var hidden = DB.settings.hiddenCategories.indexOf(cat.id)>=0;
+    h += '<button class="chip-toggle '+(hidden?"off":"")+'" data-act="toggleCatFilter" data-cat="'+cat.id+'">'+cat.icon+' '+esc(cat.label)+'</button>';
+  });
+  h += '</div>';
+
+  categories.forEach(function(cat){
+    var list = grouped[cat.id];
+    if(!list.length) return;
+    if(DB.settings.hiddenCategories.indexOf(cat.id)>=0) return;
+    var doneInCat = list.filter(function(hb){ return isDone(date,hb.id); }).length;
+    var catSt = categoryStreak(cat.id);
+    h += '<div class="cathead">'+cat.icon+' '+esc(cat.label)+' <span class="cathead-meta">'+doneInCat+'/'+list.length+(catSt>0?' · 🔥 '+catSt:'')+'</span></div>';
     h += '<div class="list">';
     list.forEach(function(hb){
       var done = isDone(date, hb.id);
@@ -530,16 +589,16 @@ function viewHabits(){
   var h='<h1>Habits</h1><div class="sub">Manage the habits you track daily.</div>';
   h+='<div class="card"><h3>Add a habit</h3>';
   h+='<div class="addrow"><input type="text" id="newIcon" class="icopick" placeholder="🙂" maxlength="4" value="✅"><input type="text" id="newName" placeholder="Habit name…">';
-  h+='<select id="newCategory">'+CATEGORIES.map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+c.label+'</option>';}).join("")+'</select>';
+  h+='<select id="newCategory">'+cats().map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+esc(c.label)+'</option>';}).join("")+'</select>';
   h+='<button class="btn" data-act="addHabit">Add</button></div>';
   h+='</div>';
 
   var grouped = groupByCategory(DB.habits.slice());
   if(!DB.habits.length) h+='<div class="empty-state">No habits yet — add one above.</div>';
-  CATEGORIES.forEach(function(cat){
+  cats().forEach(function(cat){
     var list = grouped[cat.id];
     if(!list.length) return;
-    h+='<div class="cathead">'+cat.icon+' '+cat.label+'</div>';
+    h+='<div class="cathead">'+cat.icon+' '+esc(cat.label)+'</div>';
     h+='<div class="list">';
     list.forEach(function(hb){
       var st=currentStreak(hb.id), tot=totalCount(hb.id);
@@ -571,7 +630,7 @@ function viewHabitDetail(id){
   h+='<div class="addrow"><input type="text" class="icopick" data-act="editIcon" data-id="'+id+'" value="'+esc(hb.icon)+'" maxlength="4">';
   h+='<input type="text" data-act="editName" data-id="'+id+'" value="'+esc(hb.name)+'"></div>';
   h+='<div class="field"><label>Category</label><select data-act="editCategory" data-id="'+id+'">';
-  h+=CATEGORIES.map(function(c){return '<option value="'+c.id+'" '+(hb.category===c.id?"selected":"")+'>'+c.icon+' '+c.label+'</option>';}).join("");
+  h+=cats().map(function(c){return '<option value="'+c.id+'" '+(hb.category===c.id?"selected":"")+'>'+c.icon+' '+esc(c.label)+'</option>';}).join("");
   h+='</select></div>';
   h+='<div style="margin-top:.8rem">';
   h+='<button class="btn ghost sm" data-act="archiveHabit" data-id="'+id+'">'+(hb.archived?"Unarchive":"Archive")+'</button> ';
@@ -640,6 +699,32 @@ function viewCalendar(){
   return h;
 }
 
+/* ---------- Review ---------- */
+function viewReview(){
+  var h='<h1>Review</h1><div class="sub">Completion trends over the last 7 and 30 days.</div>';
+  var o7=overallCompletionPct(7), o30=overallCompletionPct(30);
+  if(o7===null) return h+'<div class="empty-state">No habits yet.</div>';
+
+  h+='<div class="stats">';
+  h+='<div class="stat"><b>'+o7+'%</b><span>Overall, last 7 days</span></div>';
+  h+='<div class="stat"><b>'+o30+'%</b><span>Overall, last 30 days</span></div>';
+  h+='</div>';
+
+  cats().forEach(function(cat){
+    var list = activeHabits().filter(function(hb){ return hb.category===cat.id; });
+    if(!list.length) return;
+    var p7=categoryCompletionPct(cat.id,7), p30=categoryCompletionPct(cat.id,30);
+    var st=categoryStreak(cat.id);
+    h+='<div class="card"><h3>'+cat.icon+' '+esc(cat.label)+(st>0?' <span class="card-muted">· 🔥 '+st+'-day streak</span>':'')+'</h3>';
+    h+='<div class="pct">Last 7 days — '+p7+'%</div>';
+    h+='<div class="pbar '+(p7<100?"mid":"")+'"><span style="width:'+p7+'%"></span></div>';
+    h+='<div class="pct" style="margin-top:.7rem">Last 30 days — '+p30+'%</div>';
+    h+='<div class="pbar '+(p30<100?"mid":"")+'"><span style="width:'+p30+'%"></span></div>';
+    h+='</div>';
+  });
+  return h;
+}
+
 /* ---------- Settings ---------- */
 function viewSettings(){
   var r=DB.settings.reminders;
@@ -648,6 +733,24 @@ function viewSettings(){
   h+='<div class="card-muted">Fires only while Leo-Ritual is open in a browser tab — this is an offline, static app with no server to push notifications when it\'s closed.</div>';
   h+='<div class="field"><label><input type="checkbox" id="remEnabled" '+(r.enabled?"checked":"")+' data-act="toggleReminders"> Enable daily reminder</label></div>';
   h+='<div class="field"><label>Reminder time</label><input type="time" id="remTime" value="'+r.time+'" data-act="setRemTime"></div>';
+  h+='</div>';
+
+  h+='<div class="card"><h3>Categories</h3>';
+  h+='<div class="card-muted" style="margin-bottom:.6rem">Rename, re-icon, reorder, or add categories. Habits move with their category.</div>';
+  var catList=cats();
+  catList.forEach(function(cat){
+    h+='<div class="addrow">';
+    h+='<input type="text" class="icopick" data-act="editCatIcon" data-id="'+cat.id+'" value="'+esc(cat.icon)+'" maxlength="4">';
+    h+='<input type="text" data-act="editCatLabel" data-id="'+cat.id+'" value="'+esc(cat.label)+'">';
+    h+='<button class="icon-btn" data-act="catUp" data-id="'+cat.id+'" title="Move up">↑</button>';
+    h+='<button class="icon-btn" data-act="catDown" data-id="'+cat.id+'" title="Move down">↓</button>';
+    h+='<button class="btn danger sm" data-act="deleteCat" data-id="'+cat.id+'">Delete</button>';
+    h+='</div>';
+  });
+  h+='<div class="addrow" style="margin-top:.9rem">';
+  h+='<input type="text" id="newCatIcon" class="icopick" placeholder="🏷️" maxlength="4" value="🏷️">';
+  h+='<input type="text" id="newCatLabel" placeholder="New category name…">';
+  h+='<button class="btn" data-act="addCategory">Add</button></div>';
   h+='</div>';
 
   h+='<div class="card"><h3>Appearance</h3><button class="btn ghost sm" data-act="themeToggle">Toggle light / dark</button></div>';
@@ -702,6 +805,53 @@ document.addEventListener("click", function(e){
     case "calNext": state.calMonth=new Date(state.calMonth.getFullYear(),state.calMonth.getMonth()+1,1); render(); return;
     case "hCalPrev": state.habitCalMonth=new Date(state.habitCalMonth.getFullYear(),state.habitCalMonth.getMonth()-1,1); render(); return;
     case "hCalNext": state.habitCalMonth=new Date(state.habitCalMonth.getFullYear(),state.habitCalMonth.getMonth()+1,1); render(); return;
+
+    case "toggleCatFilter": {
+      var cid=el.getAttribute("data-cat");
+      var hc=DB.settings.hiddenCategories;
+      var hi=hc.indexOf(cid);
+      if(hi>=0) hc.splice(hi,1); else hc.push(cid);
+      save(); render();
+      return;
+    }
+
+    case "catUp": {
+      var listUp=cats(); var idxUp=indexOfId(listUp,id);
+      if(idxUp>0){ var tmpU=listUp[idxUp].order; listUp[idxUp].order=listUp[idxUp-1].order; listUp[idxUp-1].order=tmpU; save(); render(); }
+      return;
+    }
+    case "catDown": {
+      var listDn=cats(); var idxDn=indexOfId(listDn,id);
+      if(idxDn<listDn.length-1){ var tmpD=listDn[idxDn].order; listDn[idxDn].order=listDn[idxDn+1].order; listDn[idxDn+1].order=tmpD; save(); render(); }
+      return;
+    }
+    case "deleteCat": {
+      var allCats=cats();
+      if(allCats.length<=1){ alert("You need at least one category."); return; }
+      var cat=byId(DB.categories,id);
+      var affected=DB.habits.filter(function(hh){return hh.category===id;});
+      var fallback=allCats.filter(function(c){return c.id!==id;})[0];
+      var msg = affected.length
+        ? 'Delete "'+cat.label+'"? '+affected.length+' habit(s) will move to "'+fallback.label+'". This cannot be undone.'
+        : 'Delete the "'+cat.label+'" category?';
+      if(confirm(msg)){
+        affected.forEach(function(hh){ hh.category=fallback.id; });
+        DB.categories=DB.categories.filter(function(c){return c.id!==id;});
+        var hcx=DB.settings.hiddenCategories; var hix=hcx.indexOf(id); if(hix>=0) hcx.splice(hix,1);
+        save(); render();
+      }
+      return;
+    }
+    case "addCategory": {
+      var icoCEl=document.getElementById("newCatIcon"), labelEl=document.getElementById("newCatLabel");
+      var label=labelEl.value.trim(); var icoC=icoCEl.value.trim()||"🏷️";
+      if(label){
+        var maxCatOrder=DB.categories.reduce(function(m,c){return Math.max(m,c.order);},-1);
+        DB.categories.push({id:"cat"+uid(), label:label, icon:icoC, order:maxCatOrder+1});
+        save(); render();
+      }
+      return;
+    }
 
     case "toggleReminders": DB.settings.reminders.enabled=document.getElementById("remEnabled").checked; save(); render(); return;
     case "themeToggle": {
@@ -759,12 +909,14 @@ document.addEventListener("input", function(e){
     case "editName": byId(DB.habits,id).name=el.value; save(); return;
     case "editIcon": byId(DB.habits,id).icon=el.value; save(); return;
     case "editGuide": byId(DB.habits,id).guide=el.value; save(); return;
+    case "editCatIcon": byId(DB.categories,id).icon=el.value; save(); return;
+    case "editCatLabel": byId(DB.categories,id).label=el.value; save(); return;
   }
 });
 /* re-render crumb/sidebar labels after name/icon edits lose focus, without losing cursor mid-type */
 document.addEventListener("blur", function(e){
   var act=e.target.getAttribute && e.target.getAttribute("data-act");
-  if(act==="editName" || act==="editIcon") render();
+  if(act==="editName" || act==="editIcon" || act==="editCatIcon" || act==="editCatLabel") render();
 }, true);
 
 /* nav clicks */
