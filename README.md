@@ -39,7 +39,9 @@ Features:
 - **Reminder** — in-app + browser notification at a set time, *while the tab is open*
   (this is a static offline app — no server, so there's no push when the tab/browser
   is closed)
-- **Export / Import JSON** for backup (localStorage can be cleared by the browser)
+- **Export / Import JSON** for backup (localStorage can be cleared by the browser);
+  a banner nudges you to back up if you've never exported, or it's been 14+ days —
+  dismissible for a week at a time
 - Installable **PWA**, offline via a cache-first service worker
 
 ## Rebuilding icons
