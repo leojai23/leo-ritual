@@ -142,6 +142,7 @@ textarea.notes{width:100%; min-height:9rem; padding:.7rem .8rem; border:1px soli
 .viz-endlabel{font-size:11px; font-weight:700; fill:var(--ink)}
 .viz-rowlabel{font-size:11px; fill:var(--ink)}
 .viz-barvalue{font-size:11px; font-weight:700; fill:var(--ink)}
+.viz-barvalue-sub{font-size:9px; font-weight:600; fill:var(--ink-soft)}
 .viz-hit, .viz-barhit{cursor:pointer}
 .viz-crosshair{stroke:var(--ink-soft); stroke-width:1; pointer-events:none}
 .viz-hoverdot{fill:var(--panel); stroke:var(--accent); stroke-width:2; pointer-events:none}
@@ -151,7 +152,6 @@ textarea.notes{width:100%; min-height:9rem; padding:.7rem .8rem; border:1px soli
   pointer-events:none; z-index:5; box-shadow:var(--shadow);
 }
 .viz-tooltip b{font-size:.86rem}
-.viz-tt-sub{color:var(--bg); opacity:.75; font-size:.72rem}
 
 .calgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:.35rem; margin-top:.6rem}
 .calgrid .dow{text-align:center; font-size:.72rem; color:var(--ink-soft); font-weight:700; text-transform:uppercase}
@@ -877,7 +877,7 @@ function trendChartSvg(series){
 
 function categoryBarChartSvg(rows){
   var W=640, rowH=38, padT=4, padB=4, padL=4;
-  var barX=132, barMaxW=W-barX-56;
+  var barX=132, rightW=150, barMaxW=W-barX-rightW;
   var n=rows.length;
   var H=padT+padB+n*rowH;
 
@@ -889,7 +889,7 @@ function categoryBarChartSvg(rows){
     var color=catColor(r.cat);
     body += '<text x="'+padL+'" y="'+(cy+4)+'" class="viz-rowlabel">'+esc(r.cat.icon)+' '+esc(r.cat.label)+'</text>';
     body += '<rect x="'+barX+'" y="'+by+'" width="'+bw+'" height="18" rx="4" fill="'+color+'"/>';
-    body += '<text x="'+(barX+bw+8)+'" y="'+(cy+4)+'" class="viz-barvalue">'+r.pct7+'%</text>';
+    body += '<text x="'+(barX+bw+8)+'" y="'+(cy+4)+'"><tspan class="viz-barvalue">'+r.pct7+'%</tspan><tspan class="viz-barvalue-sub" dx="5">· 30d '+r.pct30+'%</tspan></text>';
     body += '<rect class="viz-barhit" data-i="'+i+'" data-label="'+esc(r.cat.icon)+' '+esc(r.cat.label)+'" data-pct7="'+r.pct7+'" data-pct30="'+r.pct30+'" data-streak="'+r.streak+'" x="0" y="'+(padT+i*rowH)+'" width="'+W+'" height="'+rowH+'" fill="transparent"/>';
   });
 
@@ -933,15 +933,13 @@ function initReviewInteractions(){
       });
     } else {
       svg.querySelectorAll('.viz-barhit').forEach(function(hit){
+        var streak=+hit.getAttribute('data-streak');
+        if(!streak) return; // 7d/30d are already direct-labeled; a tooltip with nothing new just gates
         function show(){
           var r=hit.getBBox();
           tooltip.innerHTML='';
-          var line1=document.createElement('div');
-          var b=document.createElement('b'); b.textContent=hit.getAttribute('data-pct7')+'% last 7d';
-          line1.appendChild(b);
-          var line2=document.createElement('div'); line2.className='viz-tt-sub';
-          line2.textContent=hit.getAttribute('data-pct30')+'% last 30d'+(+hit.getAttribute('data-streak')>0?' · 🔥 '+hit.getAttribute('data-streak')+'-day streak':'');
-          tooltip.appendChild(line1); tooltip.appendChild(line2);
+          var b=document.createElement('b'); b.textContent='🔥 '+streak+'-day streak';
+          tooltip.appendChild(b);
           tooltip.style.left=((r.x+r.width/2)/vb.width*100)+'%';
           tooltip.style.top=((r.y)/vb.height*100)+'%';
           tooltip.style.display='';
@@ -976,7 +974,7 @@ function viewReview(){
 
   if(rows.length){
     h+='<div class="card"><h3>Category completion — last 7 days</h3>';
-    h+='<div class="card-muted" style="margin-bottom:.3rem">Hover a row for the 30-day figure and streak.</div>';
+    h+='<div class="card-muted" style="margin-bottom:.3rem">Hover a row with a streak to see it.</div>';
     h+=categoryBarChartSvg(rows);
     h+='</div>';
   }
