@@ -1,7 +1,7 @@
 # Leo-Ritual
 
-A private daily habit tracker, pre-loaded with a morning wellness routine:
-**Exercise**, **Breathing Exercise**, **Twin Heart Meditation**, and **Oil Pulling**.
+A private daily habit tracker, pre-loaded with 16 habits across four areas of life:
+**Physical**, **Mental**, **Official**, and **Personal**.
 
 ## The app
 
@@ -9,14 +9,23 @@ Single `index.html` (everything inlined) + `manifest.json` + `sw.js` + two icons
 No build step needed — just open `index.html`, or the live URL once deployed.
 All data lives in the browser's `localStorage` — nothing leaves the device.
 
+Pre-loaded habits (4 per category):
+
+- **Physical** — Exercise / Gym, Oil Pulling & Brushing, Water on Waking, Cold Shower
+- **Mental** — Breathing Exercise, Twin Heart Meditation, Gratitude Journaling, Daily Reading
+- **Official** — Top-3 Daily Priorities, Deep Work Block, End-of-Day Shutdown, Learn One New Thing
+- **Personal** — Consistent Sleep/Wake Time, Screen-Off Wind-Down, Connect with a Loved One, Declutter One Small Space
+
 Features:
 
-- **Today view** — check off each habit for the day, with a running streak per habit
-- **Habits** — add, rename, re-icon, archive, or delete habits; fully editable, not
-  locked to the 4 starting habits
+- **Today view** — check off each habit for the day, grouped by category, with a
+  running streak per habit
+- **Habits** — add, rename, re-icon, re-categorize, archive, or delete habits;
+  fully editable, not locked to the starting 16
 - **Best-practice guide per habit** — each habit opens to an editable reference page;
-  the 4 starting habits come pre-filled with a short best-practice guide (e.g. correct
-  oil-pulling technique, a Twin Heart Meditation walkthrough)
+  every starting habit comes pre-filled with a short best-practice guide and a sample
+  where relevant (e.g. correct oil-pulling technique, a Twin Heart Meditation
+  walkthrough, a gratitude-journal sample entry)
 - **Streaks & history** — current streak, longest streak, total completions, and a
   per-habit monthly calendar of done/not-done days
 - **Calendar** — month grid showing overall completion across all habits, click any

@@ -109,6 +109,9 @@ nav.tabs button .ico{width:1.1rem; text-align:center; opacity:.85}
 
 .addrow{display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap}
 .addrow input{flex:1; min-width:6rem; padding:.55rem .7rem; border:1px solid var(--line); border-radius:.55rem; background:var(--bg-2); color:var(--ink)}
+.addrow select, .field select{padding:.55rem .7rem; border:1px solid var(--line); border-radius:.55rem; background:var(--bg-2); color:var(--ink)}
+.field select{width:100%}
+.cathead{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); margin:1.4rem 0 .6rem; display:flex; align-items:center; gap:.4rem}
 .addrow button, .btn{padding:.55rem .9rem; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:.55rem; cursor:pointer; font-weight:600; white-space:nowrap}
 .btn.ghost{background:none; color:var(--ink); border-color:var(--line)}
 .btn.danger{background:var(--warn); border-color:var(--warn); color:#fff}
@@ -190,10 +193,18 @@ function fmtDate(s){
   return d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 }
 
+var CATEGORIES = [
+  {id:"physical", label:"Physical", icon:"💪"},
+  {id:"mental", label:"Mental", icon:"🧘"},
+  {id:"official", label:"Official", icon:"💼"},
+  {id:"personal", label:"Personal", icon:"🏡"}
+];
+function catLabel(id){ var c=byId(CATEGORIES,id); return c?c.label:"Personal"; }
+
 var GUIDES = {
   exercise:
 "Move your body for at least 20–30 minutes, most days of the week.\n\n"+
-"• Mix it up: some cardio (walk, jog, cycle, swim) + some strength (bodyweight, weights, bands) across the week.\n"+
+"• Mix it up: some cardio (walk, jog, cycle, swim) + some strength/gym work across the week.\n"+
 "• Warm up 3–5 min before, cool down / stretch 3–5 min after.\n"+
 "• Consistency beats intensity — a brisk 20-minute walk daily beats an occasional hard workout.\n"+
 "• Progress gradually: add a little more time, weight, or reps every 1–2 weeks.\n"+
@@ -212,6 +223,9 @@ var GUIDES = {
 "1. Close the right nostril with the thumb, inhale left for 4 counts.\n"+
 "2. Close the left nostril with the ring finger, release the right, exhale right for 4 counts.\n"+
 "3. Inhale right for 4, close right, exhale left for 4. That's one round — repeat 5–10 rounds.\n\n"+
+"Optional pairing — Mantra / Chanting:\n"+
+"Once breathing settles, add a soft repeated mantra (e.g. \"Om\", or any word that centers you) timed to the "+
+"exhale for a few rounds — it deepens the calming effect and eases the mind into stillness.\n\n"+
 "• Never force the breath or hold until uncomfortable.\n"+
 "• Keep the exhale longer than or equal to the inhale to engage the calming response.\n"+
 "• Good before exercise, before meditation, or anytime you feel stressed.",
@@ -228,33 +242,138 @@ var GUIDES = {
 "4. Cosmic cleansing — visualize the earth and all beings on it being cleansed and healed by the energy radiated.\n"+
 "5. Cosmic blessing / stillness — after the active blessing, sit in silent stillness for a few minutes.\n"+
 "6. Release excess energy — ground any leftover energy by blessing the earth once more, then gently open your eyes.\n\n"+
+"Optional pairing — Forgiveness / Loving-Kindness:\n"+
+"Before or during step 2, silently name one person you're holding onto resentment toward and consciously "+
+"forgive them (for your own peace, not approval of what happened) before extending the blessing further — "+
+"this is where the practice does its deepest work.\n\n"+
 "• A service-oriented meditation — the more you give, the more comes back.\n"+
 "• Drink extra water afterward; the practice can bring up a lot of energy.\n"+
 "• This is a quick-reference summary — see the full Pranic Healing book/audio for the complete guided steps.",
 
   oilpulling:
-"An Ayurvedic oral-detox practice, done first thing in the morning, before brushing teeth or drinking anything.\n\n"+
-"Best practice:\n"+
+"An Ayurvedic oral-care routine: oil pulling once in the morning, plus brushing twice a day.\n\n"+
+"Oil pulling — first thing in the morning, before brushing or drinking anything:\n"+
 "1. Take 1 tablespoon of cold-pressed coconut or sesame oil (start with 1 tsp if you're new to it).\n"+
 "2. Swish gently around the mouth and through the teeth for 15–20 minutes — do NOT gargle or swallow. The oil "+
 "will thin and turn milky white as it mixes with saliva.\n"+
 "3. Spit the oil into a trash can or tissue, not the sink or toilet (it can solidify and clog pipes over time).\n"+
-"4. Rinse your mouth well with warm water (a salt-water rinse works well too).\n"+
-"5. Brush your teeth as normal afterward.\n\n"+
-"• Do it daily on an empty stomach for best results.\n"+
+"4. Rinse your mouth well with warm water (a salt-water rinse works well too).\n\n"+
+"Brushing — twice a day:\n"+
+"5. Brush right after the oil-pulling rinse in the morning, and again before bed at night.\n"+
+"6. Two minutes each time, soft-bristle brush, don't forget the tongue.\n\n"+
+"• Do oil pulling daily on an empty stomach for best results.\n"+
 "• Never swallow the oil — it has pulled bacteria and toxins out of the mouth.\n"+
 "• If 15–20 minutes feels too long at first, build up gradually from 5 minutes.\n"+
-"• Reported benefits: fresher breath, whiter teeth, healthier gums — pair with regular brushing/flossing, not a replacement for them."
+"• Reported benefits: fresher breath, whiter teeth, healthier gums.",
+
+  water:
+"A full glass of water (300–500ml) first thing on waking, before tea, coffee, or food.\n\n"+
+"• Keep a glass or bottle by your bed so it's the first thing you see.\n"+
+"• Room-temperature or warm water is gentler on an empty stomach than ice-cold.\n"+
+"• This is just the first, easiest win of the day — not your whole day's hydration target.",
+
+  coldshower:
+"End your normal shower with 30–60 seconds of cold water.\n\n"+
+"• Breathe slowly and steadily through it — don't gasp-breathe.\n"+
+"• New to it? Start with 15 seconds and build up over a few weeks.\n"+
+"• Skip it on sick days, or if you have a heart condition — check with a doctor first.\n"+
+"• Reported benefits: alertness, mood lift, stress resilience.",
+
+  gratitude:
+"Write down 3 things you're grateful for, with one short line on why each mattered. Morning or night, "+
+"whichever you'll actually keep doing — 5 minutes, max.\n\n"+
+"Sample entry:\n"+
+"1. Had a good phone call with my brother — felt connected.\n"+
+"2. Finished a task I'd been avoiding — relief and pride.\n"+
+"3. Enjoyed my morning coffee in silence — small, but real.\n\n"+
+"• Be specific — \"my health\" is weaker than \"woke up with no body aches today\".\n"+
+"• Mix people, moments, and small sensory things, not just big wins.\n"+
+"• Keep it under 5 minutes — this is a daily habit, not an essay.",
+
+  reading:
+"20–30 minutes daily, ideally a physical book over a screen.\n\n"+
+"• Keep a book by your bed or desk so starting takes zero friction.\n"+
+"• Fiction or non-fiction both count — the goal is the habit, not the genre.\n"+
+"• Track pages loosely, not strictly — consistency matters more than pace.\n"+
+"• If motivation dips, switch books rather than forcing through one you're not enjoying.",
+
+  priorities:
+"Each morning (or the night before), write the 3 things that would make today a win — not a 10-item to-do list.\n\n"+
+"Sample:\n"+
+"1. Finish the Q3 report draft\n"+
+"2. Reply to the 3 blocked emails\n"+
+"3. 30-min 1:1 prep for Thursday\n\n"+
+"• If you only get 1 of 3 done, you still made progress on what actually mattered.\n"+
+"• Keep it to 3 — a longer list is a to-do list, not a priority list.",
+
+  deepwork:
+"One block of 60–90 minutes, single task, phone in another room, notifications off.\n\n"+
+"• Pick the task before the block starts — don't decide mid-block.\n"+
+"• Protect it on your calendar like a meeting.\n"+
+"• A short walk or stretch right after helps it not bleed into burnout.",
+
+  shutdown:
+"A 5–10 minute ritual to close out work deliberately instead of trailing off.\n\n"+
+"• Review what got done vs. today's top-3 priorities.\n"+
+"• Write tomorrow's first task so you're not starting cold.\n"+
+"• Close tabs/apps — a visual \"done\" signal matters.\n"+
+"• Say or write one line: \"Shutdown complete.\"",
+
+  learn:
+"10–15 minutes daily on something outside your current task list — an article, a course module, a new tool feature.\n\n"+
+"• Keep a running list of things you're curious about so you never start from zero.\n"+
+"• Note one sentence on what you learned — it cements it and gives you a trail to look back on.",
+
+  sleep:
+"Same wake time every day (including weekends, within ~1 hour), 7–8 hours of sleep.\n\n"+
+"• Anchor the wake time first — bedtime naturally follows once wake time is fixed.\n"+
+"• Morning sunlight shortly after waking reinforces this rhythm.\n"+
+"• Missed a night? Don't \"catch up\" by sleeping in — get back to the same wake time the next day.",
+
+  winddown:
+"No phone, laptop, or TV for the last 30–60 minutes before bed.\n\n"+
+"• Read, stretch, or journal instead.\n"+
+"• Keep the phone charging outside the bedroom if possible.\n"+
+"• Dim the lights in this window — it signals your body it's time to wind down.",
+
+  connect:
+"A call, message, or short visit with someone who matters — daily or a few times a week.\n\n"+
+"• Doesn't need to be long — 5–10 minutes of real attention counts.\n"+
+"• Put your phone face-down and actually listen if it's a call.\n"+
+"• Rotate who you reach out to so it doesn't always default to the same person.",
+
+  declutter:
+"5 minutes, one small area — a drawer, your desk, one shelf.\n\n"+
+"• Pick a different spot each day so it doesn't become a big weekend project.\n"+
+"• \"One in, one out\" for anything you're tempted to keep \"just in case\".\n"+
+"• Don't aim for perfect — aim for a little better than yesterday."
 };
 
 function seed(){
+  var d=todayStr();
+  function h(name,icon,guide,cat,order){ return {id:uid(), name:name, icon:icon, guide:guide, category:cat, archived:false, order:order, createdAt:d}; }
   return {
-    version:1,
+    version:2,
     habits:[
-      {id:uid(), name:"Exercise", icon:"🏃", guide:GUIDES.exercise, archived:false, order:0, createdAt:todayStr()},
-      {id:uid(), name:"Breathing Exercise", icon:"🌬️", guide:GUIDES.breathing, archived:false, order:1, createdAt:todayStr()},
-      {id:uid(), name:"Twin Heart Meditation", icon:"💗", guide:GUIDES.twinheart, archived:false, order:2, createdAt:todayStr()},
-      {id:uid(), name:"Oil Pulling", icon:"🫙", guide:GUIDES.oilpulling, archived:false, order:3, createdAt:todayStr()}
+      h("Exercise / Gym","🏃",GUIDES.exercise,"physical",0),
+      h("Oil Pulling & Brushing","🪥",GUIDES.oilpulling,"physical",1),
+      h("Water on Waking","💧",GUIDES.water,"physical",2),
+      h("Cold Shower","🚿",GUIDES.coldshower,"physical",3),
+
+      h("Breathing Exercise","🌬️",GUIDES.breathing,"mental",0),
+      h("Twin Heart Meditation","💗",GUIDES.twinheart,"mental",1),
+      h("Gratitude Journaling","🙏",GUIDES.gratitude,"mental",2),
+      h("Daily Reading","📖",GUIDES.reading,"mental",3),
+
+      h("Top-3 Daily Priorities","🎯",GUIDES.priorities,"official",0),
+      h("Deep Work Block","🔕",GUIDES.deepwork,"official",1),
+      h("End-of-Day Shutdown","🌙",GUIDES.shutdown,"official",2),
+      h("Learn One New Thing","💡",GUIDES.learn,"official",3),
+
+      h("Consistent Sleep/Wake Time","😴",GUIDES.sleep,"personal",0),
+      h("Screen-Off Wind-Down","📵",GUIDES.winddown,"personal",1),
+      h("Connect with a Loved One","☎️",GUIDES.connect,"personal",2),
+      h("Declutter One Small Space","🧹",GUIDES.declutter,"personal",3)
     ],
     logs:{},
     settings:{theme:"day", reminders:{enabled:false, time:"06:30"}, lastFired:{}}
@@ -271,6 +390,7 @@ function load(){
     if(!d.settings.reminders) d.settings.reminders={enabled:false,time:"06:30"};
     if(!d.settings.lastFired) d.settings.lastFired={};
     if(!d.logs) d.logs={};
+    (d.habits||[]).forEach(function(h){ if(!h.category) h.category="personal"; });
     return d;
   }catch(e){ return seed(); }
 }
@@ -279,6 +399,13 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
 /* ---------- data helpers ---------- */
 function byId(arr,id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return null; }
 function activeHabits(){ return DB.habits.filter(function(h){return !h.archived;}).sort(function(a,b){return a.order-b.order;}); }
+function groupByCategory(list){
+  var out={};
+  CATEGORIES.forEach(function(c){ out[c.id]=[]; });
+  list.forEach(function(h){ (out[h.category]||out.personal).push(h); });
+  CATEGORIES.forEach(function(c){ out[c.id].sort(function(a,b){return a.order-b.order;}); });
+  return out;
+}
 function logFor(date){ return DB.logs[date] || []; }
 function isDone(date, habitId){ return logFor(date).indexOf(habitId) >= 0; }
 function toggleDone(date, habitId){
@@ -377,18 +504,24 @@ function viewToday(date){
     h += '<div class="pbar '+(pct<100?"mid":"")+'"><span style="width:'+pct+'%"></span></div></div>';
   }
 
-  h += '<div class="list">';
-  habits.forEach(function(hb){
-    var done = isDone(date, hb.id);
-    var st = currentStreak(hb.id);
-    h += '<div class="habitrow '+(done?"done":"")+'">';
-    h += '<div class="chk '+(done?"done":"")+'" data-act="toggleHabit" data-id="'+hb.id+'">✓</div>';
-    h += '<div class="ico">'+hb.icon+'</div>';
-    h += '<div class="body" data-act="openHabit" data-id="'+hb.id+'"><div class="name">'+esc(hb.name)+'</div>';
-    h += '<div class="streak">'+(st>0 ? '<b>🔥 '+st+'-day streak</b>' : 'No current streak')+'</div></div>';
+  var grouped = groupByCategory(habits);
+  CATEGORIES.forEach(function(cat){
+    var list = grouped[cat.id];
+    if(!list.length) return;
+    h += '<div class="cathead">'+cat.icon+' '+cat.label+'</div>';
+    h += '<div class="list">';
+    list.forEach(function(hb){
+      var done = isDone(date, hb.id);
+      var st = currentStreak(hb.id);
+      h += '<div class="habitrow '+(done?"done":"")+'">';
+      h += '<div class="chk '+(done?"done":"")+'" data-act="toggleHabit" data-id="'+hb.id+'">✓</div>';
+      h += '<div class="ico">'+hb.icon+'</div>';
+      h += '<div class="body" data-act="openHabit" data-id="'+hb.id+'"><div class="name">'+esc(hb.name)+'</div>';
+      h += '<div class="streak">'+(st>0 ? '<b>🔥 '+st+'-day streak</b>' : 'No current streak')+'</div></div>';
+      h += '</div>';
+    });
     h += '</div>';
   });
-  h += '</div>';
   return h;
 }
 
@@ -396,21 +529,28 @@ function viewToday(date){
 function viewHabits(){
   var h='<h1>Habits</h1><div class="sub">Manage the habits you track daily.</div>';
   h+='<div class="card"><h3>Add a habit</h3>';
-  h+='<div class="addrow"><input type="text" id="newIcon" class="icopick" placeholder="🙂" maxlength="4" value="✅"><input type="text" id="newName" placeholder="Habit name…"><button class="btn" data-act="addHabit">Add</button></div>';
+  h+='<div class="addrow"><input type="text" id="newIcon" class="icopick" placeholder="🙂" maxlength="4" value="✅"><input type="text" id="newName" placeholder="Habit name…">';
+  h+='<select id="newCategory">'+CATEGORIES.map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+c.label+'</option>';}).join("")+'</select>';
+  h+='<button class="btn" data-act="addHabit">Add</button></div>';
   h+='</div>';
 
-  h+='<div class="list">';
-  var all = DB.habits.slice().sort(function(a,b){return a.order-b.order;});
-  if(!all.length) h+='<div class="empty-state">No habits yet — add one above.</div>';
-  all.forEach(function(hb){
-    var st=currentStreak(hb.id), tot=totalCount(hb.id);
-    h+='<div class="item-card '+(hb.archived?"archived":"")+'" data-act="openHabit" data-id="'+hb.id+'">';
-    h+='<div class="ico">'+hb.icon+'</div>';
-    h+='<div style="flex:1"><div class="title">'+esc(hb.name)+(hb.archived?' <span class="card-muted">(archived)</span>':'')+'</div>';
-    h+='<div class="meta">'+(st>0?st+'-day streak · ':'')+tot+' total completions</div></div>';
+  var grouped = groupByCategory(DB.habits.slice());
+  if(!DB.habits.length) h+='<div class="empty-state">No habits yet — add one above.</div>';
+  CATEGORIES.forEach(function(cat){
+    var list = grouped[cat.id];
+    if(!list.length) return;
+    h+='<div class="cathead">'+cat.icon+' '+cat.label+'</div>';
+    h+='<div class="list">';
+    list.forEach(function(hb){
+      var st=currentStreak(hb.id), tot=totalCount(hb.id);
+      h+='<div class="item-card '+(hb.archived?"archived":"")+'" data-act="openHabit" data-id="'+hb.id+'">';
+      h+='<div class="ico">'+hb.icon+'</div>';
+      h+='<div style="flex:1"><div class="title">'+esc(hb.name)+(hb.archived?' <span class="card-muted">(archived)</span>':'')+'</div>';
+      h+='<div class="meta">'+(st>0?st+'-day streak · ':'')+tot+' total completions</div></div>';
+      h+='</div>';
+    });
     h+='</div>';
   });
-  h+='</div>';
   return h;
 }
 
@@ -430,6 +570,9 @@ function viewHabitDetail(id){
   h+='<div class="card"><h3>Edit habit</h3>';
   h+='<div class="addrow"><input type="text" class="icopick" data-act="editIcon" data-id="'+id+'" value="'+esc(hb.icon)+'" maxlength="4">';
   h+='<input type="text" data-act="editName" data-id="'+id+'" value="'+esc(hb.name)+'"></div>';
+  h+='<div class="field"><label>Category</label><select data-act="editCategory" data-id="'+id+'">';
+  h+=CATEGORIES.map(function(c){return '<option value="'+c.id+'" '+(hb.category===c.id?"selected":"")+'>'+c.icon+' '+c.label+'</option>';}).join("");
+  h+='</select></div>';
   h+='<div style="margin-top:.8rem">';
   h+='<button class="btn ghost sm" data-act="archiveHabit" data-id="'+id+'">'+(hb.archived?"Unarchive":"Archive")+'</button> ';
   h+='<button class="btn danger sm" data-act="deleteHabit" data-id="'+id+'">Delete</button>';
@@ -535,11 +678,11 @@ document.addEventListener("click", function(e){
     case "goHabits": e.preventDefault(); navigate("habits"); return;
 
     case "addHabit": {
-      var icoEl=document.getElementById("newIcon"), nameEl=document.getElementById("newName");
-      var name=nameEl.value.trim(); var ico=icoEl.value.trim()||"✅";
+      var icoEl=document.getElementById("newIcon"), nameEl=document.getElementById("newName"), catEl=document.getElementById("newCategory");
+      var name=nameEl.value.trim(); var ico=icoEl.value.trim()||"✅"; var cat=catEl.value||"personal";
       if(name){
         var maxOrder=DB.habits.reduce(function(m,h){return Math.max(m,h.order);},-1);
-        DB.habits.push({id:uid(), name:name, icon:ico, guide:"", archived:false, order:maxOrder+1, createdAt:todayStr()});
+        DB.habits.push({id:uid(), name:name, icon:ico, guide:"", category:cat, archived:false, order:maxOrder+1, createdAt:todayStr()});
         save(); navigate("habits");
       }
       return;
@@ -588,8 +731,10 @@ document.addEventListener("change", function(e){
   var el=e.target;
   var act=el.getAttribute("data-act");
   if(!act) return;
+  var id=el.getAttribute("data-id");
   switch(act){
     case "setRemTime": DB.settings.reminders.time=el.value; save(); return;
+    case "editCategory": byId(DB.habits,id).category=el.value; save(); render(); return;
     case "importData": {
       var f=el.files[0]; if(!f) return;
       var reader=new FileReader();
