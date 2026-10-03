@@ -19,9 +19,10 @@ Pre-loaded habits (4 per category):
 
 Features:
 
-- **Today view** — check off each individual habit, grouped by category, with a
-  per-habit streak, a per-category done count + category streak (all habits in that
-  category done that day), and chips to show/hide whole categories
+- **Today view** — a circular progress ring for the day's overall completion, then
+  check off each individual habit, grouped by category, with a per-habit streak, a
+  per-category done count + category streak (all habits in that category done that
+  day), and chips to show/hide whole categories
 - **Habits** — add, rename, re-icon, re-categorize, archive, or delete habits;
   fully editable, not locked to the starting 16
 - **Best-practice guide per habit** — each habit opens to an editable reference page;
@@ -32,12 +33,13 @@ Features:
   per-habit monthly calendar of done/not-done days
 - **Calendar** — month grid showing overall completion across all habits, click any
   date to jump to that day
-- **Review** — a 14-day daily-completion trend line (with hover crosshair + tooltip)
-  and a color-coded category comparison bar chart (7-day and 30-day % both shown
-  directly, no hover required; hover a row with a streak to see it), plus the
-  overall 7-day/30-day stat tiles. Each category gets a stable, colorblind-safe
-  color that stays fixed to that category even as others are added, renamed, or
-  removed
+- **Review** — a 14-day daily-completion trend line, a color-coded category
+  comparison bar chart (7-day and 30-day % both shown directly, hover a row with a
+  streak to see it), a GitHub-style activity heatmap (last 12 weeks, hover any day
+  for its %), and a per-habit streak strip (last 30 days, one row per habit,
+  colored by its category) — plus the overall 7-day/30-day stat tiles. Each
+  category gets a stable, colorblind-safe color that stays fixed to that category
+  even as others are added, renamed, or removed
 - **Categories** — Physical / Mental / Official / Personal out of the box, but fully
   editable in Settings: rename, re-icon, reorder, add, or delete (deleting moves its
   habits to another category rather than losing them)
