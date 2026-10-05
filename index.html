@@ -216,6 +216,7 @@ textarea.notes{width:100%; min-height:9rem; padding:.7rem .8rem; border:1px soli
 
 /* ---------- storage ---------- */
 var KEY = "leoRitualDB_v1";
+var APP_VERSION = "leo-ritual-v9";
 function uid(){ return "id" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function pad(n){ return n<10 ? "0"+n : ""+n; }
 function dstr(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
@@ -1150,6 +1151,12 @@ function viewSettings(){
   h+='<label class="btn ghost sm" style="display:inline-block">Import JSON<input type="file" id="importFile" accept="application/json" style="display:none" data-act="importData"></label>';
   h+='</div>';
 
+  h+='<div class="card"><h3>App</h3>';
+  h+='<div class="field"><label>Version</label><div class="card-muted">'+APP_VERSION+'</div></div>';
+  h+='<button class="btn ghost sm" data-act="checkUpdates">Check for updates</button> ';
+  h+='<button class="btn ghost sm" data-act="closeApp">Close app</button>';
+  h+='</div>';
+
   h+='<div class="card"><h3 style="color:var(--warn)">Danger zone</h3>';
   h+='<button class="btn danger sm" data-act="clearAll">Clear all data</button></div>';
   return h;
@@ -1269,6 +1276,9 @@ document.addEventListener("click", function(e){
       return;
     }
     case "back": navigate(el.getAttribute("data-view")); return;
+
+    case "checkUpdates": window.__checkForUpdates(); return;
+    case "closeApp": window.__confirmAppClose(); return;
   }
 });
 
@@ -1362,6 +1372,38 @@ navigate("today",{date:todayStr()});
 if("serviceWorker" in navigator){
   window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
 }
+
+/* ---------- close confirmation ---------- */
+var __intentionalClose = false;
+window.addEventListener("beforeunload", function(e){
+  if(__intentionalClose) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+window.__confirmAppClose = function(){
+  if(confirm("Close Leo-Ritual? Your data is already saved automatically.")){
+    __intentionalClose = true;
+    window.close();
+  }
+};
+
+/* ---------- update check ---------- */
+window.__checkForUpdates = function(){
+  if(!("serviceWorker" in navigator)){ alert("Service workers are not supported in this browser."); return; }
+  navigator.serviceWorker.getRegistration().then(function(reg){
+    if(!reg){ alert("No service worker registered."); return; }
+    reg.update().then(function(){
+      if(reg.waiting){
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        reg.waiting.addEventListener("statechange", function(){
+          if(reg.waiting===null) location.reload();
+        });
+      } else {
+        alert("You're on the latest version ("+APP_VERSION+").");
+      }
+    });
+  });
+};
 })();
 </script>
 </body>

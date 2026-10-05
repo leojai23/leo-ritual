@@ -1,9 +1,12 @@
 /* Leo-Ritual service worker — cache-first, versioned by content hash */
-var CACHE = "leo-ritual-v8";
+var CACHE = "leo-ritual-v9";
 var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }));
+});
+self.addEventListener("message", function(event){
+  if(event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 self.addEventListener("activate", function(e){
   e.waitUntil(caches.keys().then(function(keys){
